@@ -80,7 +80,18 @@ function valid_int() {
 }
 
 load () {
-    echo -n "{\"success\":\"1\",\"data\":{"
+    basemac=$(ip -6 link show eth0 | grep link/ether | awk {'print $2'})
+    if [ "$basemac" ]; then
+        D2B=({0..1}{0..1}{0..1}{0..1}{0..1}{0..1}{0..1}{0..1})
+        byte=$((16#$(echo $basemac | awk -F: {'print $1'})))
+        bit=${D2B[$byte]}
+        hexneu=$(printf '%02x' "$((2#$(echo -n ${bit:0:6}; [ ${bit:6:1} == "0" ] && echo -n "1" || echo -n "0"; echo ${bit:7:1})))")
+        eui64address=$(echo $basemac | awk -F: {'print "2a02:61:0:ff:'$hexneu'"$2":"$3"ff:fe"$4":"$5$6;'})
+    else 
+        eui64address="n/a"
+    fi
+
+    echo -n "{\"success\":\"1\",\"data\":{\"eui64address\":\""$eui64address"\""
     echo    "} ,\"definition\":{ } }"
 }
 
@@ -89,9 +100,11 @@ apply () {
     cp $INPUT /tmp/result.json 2>/dev/null
     echo "Starting." >$log
     cat $INPUT >>$log
+    re='^[0-9]+$'
+    re3='^[0-9a-zA-Z-]+$'
 
-    ip=$(jq -M -r '.ip' $INPUT)
-    nodeid=$(jq -M -r '.nodeid' $INPUT)
+    ip=$(jq -M -r '.ip' $INPUT 2>>$log)
+    nodeid=$(jq -M -r '.nodeid' $INPUT 2>>$log)
     re='^[0-9]+$'
     if   [ ! "$ip" ]; then
         echo "{\"success\":\"0\",\"error\": \"IPv4-ADDRESS not specified\"}"
@@ -121,7 +134,7 @@ BEGIN { val = canon(want) }
         exit
     fi
 
-    routername=$(jq -M -r '.routername' $INPUT)
+    routername=$(jq -M -r '.routername' $INPUT 2>>$log)
     #check routername: not allow router -router YOURNODENAME-router node-router nodename-router
     if [ "$routername" == "router" ] || 
        [ "$routername" == "-router" ] ||
@@ -139,8 +152,8 @@ BEGIN { val = canon(want) }
         fi
     fi
 
-    webinterface=$(jq -M -r '.webinterface' $INPUT)
-    laninterface=$(jq -M -r '.laninterface' $INPUT)
+    webinterface=$(jq -M -r '.webinterface' $INPUT 2>>$log)
+    laninterface=$(jq -M -r '.laninterface' $INPUT 2>>$log)
     #check webinterface and laninterface to be ethX or ethX.nnnn, not the same!
     if [ "$laninterface" ] && ! valid_int $laninterface; then
         echo "{\"success\":\"0\",\"error\": \"LAN-Interface not in format: ethX[.vlan]\"}"
@@ -166,6 +179,48 @@ BEGIN { val = canon(want) }
     done
     if   [ "$customconfig" ]; then
         echo "{\"success\":\"0\",\"error\": \"Router MUST be on factory default settings - "$customconfig"\"}"
+        exit
+    fi
+
+    #check additional OPLSR-interfaces
+    olsrvlans=$(jq -M -r '.olsrvlans[] | (.interface +","+ .name)' $INPUT 2>>$log | sed 's/ /-/g')
+    jq -M -r '.olsrvlans[] | (.interface +","+ .name)' $INPUT >>$log 2>>$log
+    for l in $olsrvlans; do
+        v=$(echo $l | cut -d"," -f1)
+        n=$(echo $l | cut -d"," -f2)
+        if ! valid_int $v; then
+            error="interface not correct"
+        elif ! [[ $v =~ "." ]]; then
+            error="no vlan interface"
+        fi
+        if [ "$n" ] && ! [[ $n =~ $re3 ]]; then
+            error="name problem"
+        fi
+    done
+    if   [ "$error" ]; then
+        echo "{\"success\":\"0\",\"error\": \"OLSR-VLAN-Settings error - "$error"\"}"
+        exit
+    fi
+
+    #check portforwardings
+    portforwardings=$(jq -M -r '.portforwardings[] | (.port +","+ .name)' $INPUT 2>>$log | sed 's/ /-/g')
+    jq -M -r '.portforwardings[] | (.port +","+ .name)'  $INPUT >>$log 2>>$log
+    for l in $portforwardings; do
+        p=$(echo $l | cut -d"," -f1)
+        n=$(echo $l | cut -d"," -f2)
+        if ! [[ $p =~ $re ]]; then
+            error="port not number"
+        elif [ $p -ge 99 ]; then
+            error="port number out of range 1..9999"
+        elif [ $p -le 1 ]; then
+            error="port number out of range 1..9999"
+        fi
+        if [ "$n" ] && ! [[ $n =~ $re3 ]]; then
+            error="name problem"
+        fi
+    done
+    if   [ "$error" ]; then
+        echo "{\"success\":\"0\",\"error\": \"Portforwarding-Settings error - "$error"\"}"
         exit
     fi
     #looks like all entered forms-data is validated and ok at this point
@@ -25356,7 +25411,9 @@ fi
         $wizard"/"wizard-run load >>$log 2>>$log
         [ "$w" == "OLSRd_V1" ] && $wizard"/"wizard-run apply /tmp/olsrd1.json >>$log 2>>$log
     done
-    
+    echo 'wizard-olsrd_v2=yes' >>/config/user-data/autoupdate.dat 2>>$log
+    echo 'wizard-autoupdate=yes' >>/config/user-data/autoupdate.dat 2>>$log
+
     echo "Finished." >>$log
     #remove this wizard, then reboot
     cp $log /config/user-data/0xffsetup.log >/dev/null 2>/dev/null
@@ -25371,4 +25428,3 @@ case "$ACTION" in
         apply
         ;;
 esac
-

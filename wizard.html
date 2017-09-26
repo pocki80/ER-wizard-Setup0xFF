@@ -2,7 +2,7 @@
 
 EdgeMAX Wizard "Setup0xFF" created 09/2017 by CPO for FunkFeuer.at
 Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.9.0+)
-versioninfo=201709260
+versioninfo=201709261
 ^-- use version identifier as number: YYYYMMDDX whereas X can be intraday-version
 autoupdate=201701010
 ^-- set autoupdate the same version identifier to allow autoupdates
@@ -18,24 +18,34 @@ autoupdate=201701010
 
 <fieldset id="basic" name="basic" class="primary expanded">
     <legend>Basic-Settings</legend>
-    These fields are obligatory to setup your router for 0xFF-Funkfeuer.at. Obtain your public IP-Address from <a href="https://portal.funkfeuer.at/" target="_blank">https://portal.funkfeuer.at/</a>. There you can see the numeric Node-ID for your Node, as well.
-	<br><br>
+    These fields are obligatory to setup your router for 0xFF-Funkfeuer.at. 
+    Obtain your public IP-Address from <a href="https://portal.funkfeuer.at/" target="_blank">https://portal.funkfeuer.at/</a>. 
+    There you can see the numeric Node-ID for your Node, as well.
+    <br><br>
     <table border="0">
       <tr><td width=150 style="vertical-align:middle"><b>Public IPv4</b></td>
       <td><input style="right:10px" id="ip" name="ip" type="text" size="15" placeholder="78.41.119.000" maxlength="15" /> OLSR-Address from Redeemer<td></tr>
-      <tr><td>&nbsp;</td><td>This will be the Public IPv4 Address from the Range 78.41.112.0/21 or 193.238.156.0/22</td></tr>
+      <tr><td>&nbsp;</td><td>This will be the Public IPv4 Address from the Range 78.41.112.0/21 or 193.238.156.0/22. 
+      The IPv4 adress you enter here will be assigned to interface br0 with Subnet-Suffix /32 for olsr(v1), bridge-members 
+      will be all eth-ports natively (no vlan tag), that are NOT enabled as LAN-Interface or as Web-Access-Interface (see optional settings section below).
+      In case you need tagged OLSR traffic on at least one eth-port, enter the needed interfaces/vlans in the optional settings section. </td></tr>
+      <tr><td>&nbsp;</td><td><input style="right:10px" id="eui64address" name="eui64address" type="text" size="40" disabled /> OLSRv2 IPv6 Address </td></tr>
+      <tr><td>&nbsp;</td><td>OLSRd2 will fire up using this EUI64-style IPv6 address, what is calculated from your routers unique MAC address. This field is read-only.</td></tr>
       <tr><td colspan=2><hr></td></tr>
 
       <tr><td style="vertical-align:middle"><b>Node-ID</b></td>
       <td><input style="right:10px" id="nodeid" name="nodeid" type="text" size="5" placeholder="2222" maxlength="5" /> Numeric Node-ID from Redeemer<td></tr>
-      <tr><td>&nbsp;</td><td>This ID will be used for the local Management-Network from the Range 10.xxx.yy.100/24.</td></tr>
-
+      <tr><td>&nbsp;</td><td>This ID will be used for the local Management-Network from the Range 10.xxx.yy.100/24 (i.e. nodeid <em>12345</em> 
+      will result in 10.<em>123.45</em>.100/24). This Subnet is dedicated for your local AirOS-Antennas' Management Interface: in AirOS, use Network-Settings-Mode "Advanced"
+      to configure the IP settings for vlan 1100 to 10.xxx.yy.NNN/255.255.255.0 with Gateway 10.xxx.yy.100 (NNN can be any number between 1 and 99, i.e. 10.123.45.1 for your first Antenna).<br>
+      Use "Create Portforwardings for AirOS-Antennas" section in the optional settings below to enable forwarding from i.e. https://yourpublicip:1001/ to the management interface from your Antenna 1.
+      </td></tr>
     </table>
 </fieldset>
 
 <fieldset id="optional" name="optional" class="primary expanded">
     <legend>Additional-Settings</legend>
-    Here you can configure optional settings for your interfaces and your router.
+    Here you can configure optional settings for your router.
     <br><br>
     <table border="0">
       <tr><td width=150 style="vertical-align:middle"><b>Routername</b></td>
@@ -43,16 +53,80 @@ autoupdate=201701010
       <tr><td>&nbsp;</td><td>Assign a reasonable hostname to your router (don't forget to replace YOURNODENAME by the nodename of your node).</td></tr>
       <tr><td colspan=2><hr></td></tr>
 
+      <tr><td style="vertical-align:middle"><b>SSH-Port</b></td>
+      <td><input style="right:10px" id="laninterface" name="sshport" type="text" size="9" value="10" maxlength="5" /> Change default ssh-port?<td></tr>
+      <tr><td>&nbsp;</td><td>Changing the SSH-Port from 22 to another will reduce the risk of exploits. Common on Funkfeuer-Edgerouters is port '10'</td></tr>
+      <tr><td colspan=2><hr></td></tr>
+
+      <tr><td style="vertical-align:middle"><b>Username</b></td>
+      <td><input style="right:10px" id="laninterface" name="usnername" type="text" size="9" placeholder="ubnt" maxlength="20" /> Change default username?<td></tr>
+      <tr><td>&nbsp;</td><td>Changing the default username to another will reduce the risk of exploits. Common on Funkfeuer-Edgerouter is 'ubnt' or 'funkfeuer'.</td></tr>
+      <tr><td colspan=2><hr></td></tr>
+    </table>
+</fieldset>
+
+<fieldset id="advanced" name="advanced" class="primary expanded">
+    <legend>Advanced-Settings</legend>
+    Here you can configure advanced settings for your interfaces.
+    <br><br>
+    <table border="0">
       <tr><td style="vertical-align:middle"><b>LAN-Interface</b></td>
       <td><input style="right:10px" id="laninterface" name="laninterface" type="text" size="9" placeholder="eth0" maxlength="9" /> Let local clients connect to the web.<td></tr>
-      <tr><td>&nbsp;</td><td>Interface which will be NAT/LAN for local clients to connect to the internet. This interface will use 192.168.1.1/24 with DHCP-server enabled.</td></tr>
+      <tr><td>&nbsp;</td><td>Interface which will be NAT/LAN for local clients to connect to the internet. This interface will use 192.168.1.1/24 with 
+                             DHCP-server enabled and will do NAT/masquerade to your public 0xFF-Funkfeuer IP address on br0.<br>
+                             If you need to access the routers WebGUI after clicking on "Apply" and have no working OLSR connection right away, this might be an easy (and the only?)
+                             way to open https://192.168.1.1/ after reboot! </td></tr>
       <tr><td colspan=2><hr></td></tr>
 
       <tr><td style="vertical-align:middle"><b>Web-Access</b></td>
-      <td><input style="right:10px" id="webinterface" name="webinterface" type="text" size="9" placeholder="eth0.300" maxlength="9" /> NAT-Network from an eisting ISP?<td></tr>
-      <tr><td>&nbsp;</td><td>Interface which connects to the NAT-Router of your existing Internet Service Provider. This interface will optain it's address via DHCP-client and should NOT use 192.168.1.0/24 when LAN-Interface is used (field above).</td></tr>
+      <td><input style="right:10px" id="webinterface" name="webinterface" type="text" size="9" placeholder="eth0.300" maxlength="9" /> NAT-Network from an existing ISP?<td></tr>
+      <tr><td>&nbsp;</td><td>Interface which connects to the NAT-Router of your existing Internet Service Provider. This interface will optain it's address via DHCP-client 
+                             and should NOT use 192.168.1.0/24 when LAN-Interface is used (field above).<br>
+                             If you need to access the routers WebGUI after clicking on "Apply" and have no working OLSR connection right away, this might be an easy (and the only?)
+                             way to open the routers Management interface after reboot! Look at your existing NAT-Router for obtained dhcp-leases in order to find out this 
+                             EdgeRouter's local IP address within your existing NAT network.
+                             </td></tr>
+      <tr><td colspan=2><hr></td></tr>
+
+      <tr><td style="vertical-align:middle"><b>OLSR-VLANs</b></td>
+      <td>Assign additional vlan tagged OLSR interfaces to br0<td></tr>
+      <tr><td>&nbsp;</td><td>
+        <div class="addable" data-min="0" data-max="20" data-object="olsrvlans" data-objectify="1">
+        <div class="addable-template" style="padding-top:0px;">
+        <div class="multi">
+        <span class="text" style="top:5px">Port.VLAN</span>
+        <span><input name="interface" size="9" placeholder="eth0.100" /></span>
+        <span class="text" style="top:5px">Name</span>
+        <span><input name="name" size="16" placeholder="OLSR" /></span>
+        <span><button type="button" class="addable-remove">Remove</button></span>
+        </div>
+        </div>
+        <div class="addable-container"></div>
+        <button type="button" class="addable-add">Add</button>
+        </div>
+        </td></tr>
+
+      <tr><td colspan=2><hr></td></tr>
+      <tr><td style="vertical-align:middle"><b>Antenna-IPs</b></td>
+      <td>Configure Portforwardings to AirOS Management Interfaces<td></tr>
+      <tr><td>&nbsp;</td><td>
+        <div class="addable" data-min="0" data-max="20" data-object="portforwardings" data-objectify="1">
+        <div class="addable-template" style="padding-top:0px;">
+        <div class="multi">
+        <span class="text" style="top:5px">10.xxx.yy.</span>
+        <span><input name="port" size="3" placeholder="000" /></span>
+        <span class="text" style="top:5px">Name</span>
+        <span><input name="name" size="25" placeholder="Antenna-1" /></span>
+        <span><button type="button" class="addable-remove">Remove</button></span>
+        </div>
+        </div>
+        <div class="addable-container"></div>
+        <button type="button" class="addable-add">Add</button>
+        </div>
+        </td></tr>
     </table>
 </fieldset>
+
 <div class="instructions">
 On clicking "apply", this wizard will configure your interfaces according the entered information above, install OLSRd(v1+v2) routing daemons and reboot the device.
 In case you connected to <em>192.168.1.1</em> via <em>eth0</em> and did NOT enter "eth0" in the Field "LAN-Interface", you will need re-login on your new LAN-interface. 
