@@ -102,10 +102,10 @@ apply () {
     cat $INPUT >>$log
     re='^[0-9]+$'
     re3='^[0-9a-zA-Z-]+$'
+    re4='^[0-9a-z-]+$'
 
     ip=$(jq -M -r '.ip' $INPUT 2>>$log)
     nodeid=$(jq -M -r '.nodeid' $INPUT 2>>$log)
-    re='^[0-9]+$'
     if   [ ! "$ip" ]; then
         echo "{\"success\":\"0\",\"error\": \"IPv4-ADDRESS not specified\"}"
         exit
@@ -152,8 +152,8 @@ BEGIN { val = canon(want) }
         fi
     fi
 
-    webinterface=$(jq -M -r '.webinterface' $INPUT 2>>$log)
-    laninterface=$(jq -M -r '.laninterface' $INPUT 2>>$log)
+    webinterface=$(jq -M -r '.webinterface' $INPUT 2>>$log | awk '{print tolower($0)}')
+    laninterface=$(jq -M -r '.laninterface' $INPUT 2>>$log | awk '{print tolower($0)}')
     #check webinterface and laninterface to be ethX or ethX.nnnn, not the same!
     if [ "$laninterface" ] && ! valid_int $laninterface; then
         echo "{\"success\":\"0\",\"error\": \"LAN-Interface not in format: ethX[.vlan]\"}"
@@ -172,10 +172,12 @@ BEGIN { val = canon(want) }
     [ $(ls /opt/vyatta/config/active/interfaces/bridge | wc -l) \> 0 ] && customconfig="bridge config detected"
     [ $(grep -Ec "rule 500[01]" /config/config.boot) \> 0 ] && customconfig="masquerade detected"
     [ $(ip -4 a | grep -E "192\.168\.[0-9]{1,3}\.[0-9]{1,3}" | grep -cv "192.168.1.1") \> 0 ] && customconfig="192.168.* found"
-    [ $(grep "name-server" /config/config.boot) \> 0 ] && customconfig="name servers found"
+    [ $(grep -c "name-server" /config/config.boot) \> 0 ] && customconfig="name servers found"
+    ubntpw=$(grep "user ubnt {" -A3 /config/config.boot | grep encrypted-password | awk '{print $2}')
+    [ ! "$ubntpw" ] && customconfig="default user 'ubnt' not found"
     #search for existing oldr wizards
     for i in $(find /config/wizard/feature/ -name wizard.html); do
-        [ $(head $i -n 15 | grep -E 'OLSRd_V[12]') ] && customconfig="OLSRd already installed"
+        [ $(head $i -n 15 | grep -cE 'OLSRd_V[12]') \> 0 ] && customconfig="OLSRd already installed"
     done
     if   [ "$customconfig" ]; then
         echo "{\"success\":\"0\",\"error\": \"Router MUST be on factory default settings - "$customconfig"\"}"
@@ -186,13 +188,15 @@ BEGIN { val = canon(want) }
     olsrvlans=$(jq -M -r '.olsrvlans[] | (.interface +","+ .name)' $INPUT 2>>$log | sed 's/ /-/g')
     jq -M -r '.olsrvlans[] | (.interface +","+ .name)' $INPUT >>$log 2>>$log
     for l in $olsrvlans; do
-        v=$(echo $l | cut -d"," -f1)
+        v=$(echo $l | cut -d"," -f1 | awk '{print tolower($0)}')
         n=$(echo $l | cut -d"," -f2)
         if ! valid_int $v; then
             error="interface not correct"
         elif ! [[ $v =~ "." ]]; then
             error="no vlan interface"
         fi
+        [ "$webinterface" ] && [ "$webinterface" == "$v" ] && error="OLSR-VLAN must not be WebInterface"
+        [ "$laninterface" ] && [ "$webinterface" == "$v" ] && error="OLSR-VLAN must not be LAN-Interface"
         if [ "$n" ] && ! [[ $n =~ $re3 ]]; then
             error="name problem"
         fi
@@ -223,13 +227,46 @@ BEGIN { val = canon(want) }
         echo "{\"success\":\"0\",\"error\": \"Portforwarding-Settings error - "$error"\"}"
         exit
     fi
+    
+    username=$(jq -M -r '.username' $INPUT 2>>$log | awk '{print tolower($0)}')
+    [ "$username" == "ubnt" ] && username=""
+    if [ "$username" ]; then
+        if ! [[ $username =~ $re4 ]]; then
+            echo "{\"success\":\"0\",\"error\": \"USERNAME contains problematic characters, use [0-9a-z]\"}"
+            exit
+        elif [ -d "/home/"$username ]; then
+            echo "{\"success\":\"0\",\"error\": \"USERNAME already exists\"}"
+            exit
+        elif [ "$username" == "root" ]; then
+            echo "{\"success\":\"0\",\"error\": \"USERNAME 'root' is not allowed\"}"
+            exit
+        fi
+    fi
+    sshport=$(jq -M -r '.sshport' $INPUT 2>>$log)
+    if [ "$sshport" ]; then
+        sshcurrent=$(grep -A3 ssh /config/config.boot | grep port | awk '{ print $2}')
+        if ! [[ $sshport =~ $re ]]; then
+            error="port not number"
+        elif [ $sshport -ge 99 ]; then
+            error="port number out of range 1..9999"
+        elif [ $sshport -le 1 ]; then
+            error="port number out of range 1..9999"
+        elif [ $(($sshport)) -eq $(($sshcurrent)) ]; then
+            sshport=""
+        fi
+    fi
+    if   [ "$error" ]; then
+        echo "{\"success\":\"0\",\"error\": \"SSH-Port error - "$error"\"}"
+        exit
+    fi
+
     #looks like all entered forms-data is validated and ok at this point
 
     #ensure values are "numbers"
     [[ "$webinterface" ]] && webinterfaceport=$(echo $webinterface | cut -d "." -f1)
-    [[ $webinterface =~ "." ]] && webinterfacevlan=$(($(echo $webinterface | cut -d "." -f2)))
+    [[ $webinterface =~ "." ]] && webinterfacevlan=$(($(echo $webinterface | cut -d "." -f2))) && webinterface=$webinterfaceport"."$webinterfacevlan
     [[ "$laninterface" ]] && laninterfaceport=$(echo $laninterface | cut -d "." -f1)
-    [[ $laninterface =~ "." ]] && laninterfacevlan=$(($(echo $laninterface | cut -d "." -f2)))
+    [[ $laninterface =~ "." ]] && laninterfacevlan=$(($(echo $laninterface | cut -d "." -f2))) && laninterface=$laninterfaceport"."$laninterfacevlan
     nodeid=$(printf %05d $((10#$nodeid + 0))); 
     lansegment="10."$((10#${nodeid:0:3} + 0))"."$((10#${nodeid:3:2} + 0))"."
 
@@ -275,6 +312,25 @@ BEGIN { val = canon(want) }
         commandlist[${#commandlist[@]}]="set interfaces ethernet "$i" bridge-group bridge br0"
         commandlist[${#commandlist[@]}]="set interfaces ethernet "$i" description OLSR"
     done
+    for l in $olsrvlans; do
+        v=$(echo $l | cut -d"," -f1 | awk '{print tolower($0)}')
+        n=$(echo $l | cut -d"," -f2)
+        port=$(echo $v | cut -d "." -f1)
+        vlan=$((10#$(echo $v | cut -d "." -f2)))
+        for e in $existingips; do
+            p=$(echo $e | cut -d "," -f1)
+            if [ "$p" == "$port.$vlan" ]; then
+                echo "match: "$e >>$log
+                a=$(echo $e | cut -d "," -f2)
+                commandlist[${#commandlist[@]}]="delete interfaces ethernet "$port" vif "$vlan" address "$a
+                commitneeded=1
+            fi
+        done
+        [ $commitneeded ] && commandlist[${#commandlist[@]}]="commit" && commitneeded=""
+        commandlist[${#commandlist[@]}]="set interfaces ethernet "$port" vif "$vlan" bridge-group bridge br0"
+        commandlist[${#commandlist[@]}]="set interfaces ethernet "$port" vif "$vlan" description "$n
+    done
+
     
     commandlist[${#commandlist[@]}]="set port-forward auto-firewall enable"
     commandlist[${#commandlist[@]}]="set port-forward hairpin-nat enable"
@@ -337,8 +393,54 @@ BEGIN { val = canon(want) }
         eui64address=$(echo $basemac | awk -F: {'print "2a02:61:0:ff:'$hexneu'"$2":"$3"ff:fe"$4":"$5$6"/128";'})
         commandlist[${#commandlist[@]}]="set interfaces loopback lo address "$eui64address
     fi
+    if [ "$username" ]; then
+        commandlist[${#commandlist[@]}]="set system login user "$username" full-name Admin"
+        commandlist[${#commandlist[@]}]="set system login user "$username" level admin"
+        commandlist[${#commandlist[@]}]="set system login user "$username" authentication encrypted-password "$ubntpw
+        commandlist[${#commandlist[@]}]="delete system login user ubnt"
+    fi
+    
+    commandlist[${#commandlist[@]}]="set service ssh port 10"
 
-    #for executecmd in "${commandlist[@]}"; do echo $executecmd >>$log; done
+    rule=$(sed -n "/nat {/,/^    }/p" /config/config.boot | grep -E "^        rule [0-9]{1,4} \{" | awk '{ print $2}' | grep -vE "5[0-9]{3}" | tail -n 1)
+    for l in $portforwardings; do
+        p=$(echo $l | cut -d"," -f1)
+        n=$(echo $l | cut -d"," -f2)
+        rule=$(($rule +1))
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" description "$p"_ssl_"$n
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination address "$ip
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination port "$(($p+1000))
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inbound-interface br0"
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address address "$lansegment$p
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address port 443"
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" log disable"
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" protocol tcp"
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" type destination"
+        rule=$(($rule +1))
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" description "$p"_ssh_"$n
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination address "$ip
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination port "$(($p+1000))"2"
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inbound-interface br0"
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address address "$lansegment$p 
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address port 22"
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" log disable"
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" protocol tcp"
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" type destination"
+        rule=$(($rule +1))
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" description "$p"_snmp_"$n
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination address "$ip
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination port "$(($p+1000))"3"
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inbound-interface br0"
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address address "$lansegment$p
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address port 161"
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" log disable"
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" protocol udp"
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" type destination"
+    done
+
+    #DEBUG
+    #for executecmd in "${commandlist[@]}"; do echo $executecmd >>$log; done; exit
+
     cmd="/opt/vyatta/sbin/vyatta-cfg-cmd-wrapper"
 tfile=$(mktemp)
 (
