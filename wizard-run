@@ -272,7 +272,7 @@ BEGIN { val = canon(want) }
     version=$(cat /root.dev/version | awk '{print $2}' | tr -d 'v')
     versionmajor=$(echo $version | cut -d "." -f1)
     versionsub=$(echo $version | cut -d "." -f2)
-    [ $(($versionmajor)) -eq 1 ] && [ $(($versionsub)) -ne 8 ] && error="prior v1.9.0 not supported"
+    [ $(($versionmajor)) -eq 1 ] && [ $(($versionsub)) -ne 9 ] && error="prior v1.9.0 not supported"
     if   [ "$error" ]; then
         echo "{\"success\":\"0\",\"error\": \"Update your FIRMWARE first - "$error"\"}"
         exit
@@ -469,15 +469,13 @@ BEGIN { val = canon(want) }
 
 
     simulate=$(jq -M -r '.simulate' $INPUT 2>>$log)
-    if [ "$simulate"=="on" ]; then
+    if [ "$simulate" == "on" ]; then
         echo "## SIMULATE MODE ##" >>$log
         for executecmd in "${commandlist[@]}"; do echo $executecmd >>$log; done;
         echo "## SIMULATE MODE DONE ##" >>$log
         echo "{\"success\":\"1\"}"
         exit
     fi
-
-
 
     cmd="/opt/vyatta/sbin/vyatta-cfg-cmd-wrapper"
 tfile=$(mktemp)
@@ -25568,7 +25566,7 @@ name="logfile" cols="100" rows="30">' >$medir"/wizard.html"
     echo '</textarea></fieldset><div class="instructions">Click "Delete from List" to remove this dialog - you will not need it here anymore</div>' >>$medir"/wizard.html"
     #replace wizard-run with a dummy success script, and REBOOT
     echo '#!/bin/bash
-echo ''{"success":"1","data":{},"definition":{}}''' >$medir"/wizard-run"; reboot
+echo "{\"success\":\"1\",\"data\":{},\"definition\":{}}"' >$medir"/wizard-run"; reboot
 }
 
 case "$ACTION" in
