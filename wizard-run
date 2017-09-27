@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "ER-wizard-Setup0xFF" created 09/2017 by CPO for FunkFeuer.at
-# Version 20170926
+# Version 20170927
 # ^-- previous line is used frombmk-webstatus-package as version identification, dont remove "Version "
 # Shortform: Setup0xFF
 #
@@ -98,8 +98,9 @@ load () {
 apply () {
     # for debugging purposes
     cp $INPUT /tmp/result.json 2>/dev/null
-    echo "Starting." >$log
+    echo "## Starting - this is your config ##" >$log
     cat $INPUT >>$log
+    echo "## Preparing configuration... ##" >$log
     re='^[0-9]+$'
     re3='^[0-9a-zA-Z-]+$'
     re4='^[0-9a-z-]+$'
@@ -466,7 +467,7 @@ BEGIN { val = canon(want) }
             commandlist[${#commandlist[@]}]="set service nat rule "$rule" type destination"
         fi
     done
-
+    echo "## Configuration ready ##" >$log
 
     simulate=$(jq -M -r '.simulate' $INPUT 2>>$log)
     if [ "$simulate" == "on" ]; then
@@ -477,6 +478,7 @@ BEGIN { val = canon(want) }
         exit
     fi
 
+    echo "## EXECUTING configuration commands... ##" >>$log
     cmd="/opt/vyatta/sbin/vyatta-cfg-cmd-wrapper"
 tfile=$(mktemp)
 (
@@ -484,7 +486,7 @@ $cmd begin
 ret=0
 for executecmd in "${commandlist[@]}"; do
   if [ $ret == 0 ]; then
-    echo "--execute:"$executecmd >>$log
+    echo ""$executecmd >>$log
     $cmd $executecmd || ret=1
   else
     echo "--skipped: "$executecmd >>$log
@@ -511,6 +513,7 @@ exit $ret
         echo "{\"success\":\"1\"}"
     fi
 
+    echo "## SUCCESS, now extracting software packages... ##" >>$log
     cat >/tmp/olsrd1.json <<'ENDSCRIPTCONTENT'
 {
     "olsrdsettings":
@@ -25529,6 +25532,7 @@ fi
     #extract and install olsr1 and olsr2 packages
     medir=$(dirname $me)
     for w in $(echo OLSRd_V1 OLSRd_V2); do
+        echo "## INSTALLING "$w" ##" >>$log
         wizard="/config/wizard/feature/"$w
         tar   -xvzf /tmp/ER-$w.tar.gz -C /tmp >/tmp/result.txt 2>>$log
         rm -f       /tmp/ER-$w.tar.gz >>$log 2>>$log
@@ -25552,7 +25556,7 @@ fi
     echo 'wizard-olsrd_v2=yes' >>/config/user-data/autoupdate.dat 2>>$log
     echo 'wizard-autoupdate=yes' >>/config/user-data/autoupdate.dat 2>>$log
 
-    echo "Finished." >>$log
+    echo "## Finished ##" >>$log
     #keep logfile in user-data
     cp $log /config/user-data/0xffsetup.log >/dev/null 2>/dev/null
     #replace wizard.html with a logfile-view static page
