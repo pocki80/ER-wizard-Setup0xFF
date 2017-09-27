@@ -27,7 +27,7 @@ Fill in your settings (description and explanation within the Wizard UI) and cli
 
 ## Prerequisites
 * factory settings:
-  * username ubnt (password my have been changed already)
+  * username ubnt (password may have been changed already)
   * no bridge created
   * no olsrd_v1 or olsrd_v2 installed
   * no NAT/masquerade rules applied already
