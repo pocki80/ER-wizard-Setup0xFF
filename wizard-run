@@ -169,22 +169,6 @@ BEGIN { val = canon(want) }
         exit
     fi
 
-    #check for router being in factory-setting stage
-    [ $(ls /opt/vyatta/config/active/interfaces/bridge 2>/dev/null | wc -l) \> 0 ] && customconfig="bridge config detected"
-    [ $(grep -Ec "rule 500[01]" /config/config.boot) \> 0 ] && customconfig="masquerade detected"
-    [ $(ip -4 a | grep -E "192\.168\.[0-9]{1,3}\.[0-9]{1,3}" | grep -cv "192.168.1.1") \> 0 ] && customconfig="192.168.* found"
-    [ $(grep -c "name-server" /config/config.boot) \> 0 ] && customconfig="name servers found"
-    ubntpw=$(grep "user ubnt {" -A3 /config/config.boot | grep encrypted-password | awk '{print $2}')
-    [ ! "$ubntpw" ] && customconfig="default user 'ubnt' not found"
-    #search for existing oldr wizards
-    for i in $(find /config/wizard/feature/ -name wizard.html); do
-        [ $(head $i -n 15 | grep -cE 'OLSRd_V[12]') \> 0 ] && customconfig="OLSRd already installed"
-    done
-    if   [ "$customconfig" ]; then
-        echo "{\"success\":\"0\",\"error\": \"Router MUST be on factory default settings - "$customconfig"\"}"
-        exit
-    fi
-
     #check additional OPLSR-interfaces
     olsrvlans=$(jq -M -r '.olsrvlans[] | (.interface +","+ .name)' $INPUT 2>>$log | sed 's/ /-/g')
     jq -M -r '.olsrvlans[] | (.interface +","+ .name)' $INPUT >>$log 2>>$log
@@ -278,9 +262,25 @@ BEGIN { val = canon(want) }
         echo "{\"success\":\"0\",\"error\": \"Update your FIRMWARE first - "$error"\"}"
         exit
     fi
-
+    
+    #check for router being in factory-setting stage
+    [ $(ls /opt/vyatta/config/active/interfaces/bridge 2>/dev/null | wc -l) \> 0 ] && customconfig="bridge config detected"
+    [ $(grep -Ec "rule 500[01]" /config/config.boot) \> 0 ] && customconfig="masquerade detected"
+    [ $(ip -4 a | grep -E "192\.168\.[0-9]{1,3}\.[0-9]{1,3}" | grep -cv "192.168.1.1") \> 0 ] && customconfig="192.168.* found"
+    [ $(grep -c "name-server" /config/config.boot) \> 0 ] && customconfig="name servers found"
+    ubntpw=$(grep "user ubnt {" -A3 /config/config.boot | grep encrypted-password | awk '{print $2}')
+    [ ! "$ubntpw" ] && customconfig="default user 'ubnt' not found"
+    #search for existing oldr wizards
+    for i in $(find /config/wizard/feature/ -name wizard.html); do
+        [ $(head $i -n 15 | grep -cE 'OLSRd_V[12]') \> 0 ] && customconfig="OLSRd already installed"
+    done
+    if   [ "$customconfig" ]; then
+        echo "{\"success\":\"0\",\"error\": \"Router MUST be on factory default settings - "$customconfig"\"}"
+        exit
+    fi
+    
     #looks like all entered forms-data is validated and ok at this point
-
+    
     #ensure values are "numbers"
     [[ "$webinterface" ]] && webinterfaceport=$(echo $webinterface | cut -d "." -f1)
     [[ $webinterface =~ "." ]] && webinterfacevlan=$(($(echo $webinterface | cut -d "." -f2))) && webinterface=$webinterfaceport"."$webinterfacevlan
