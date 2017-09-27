@@ -169,7 +169,7 @@ BEGIN { val = canon(want) }
     fi
 
     #check for router being in factory-setting stage
-    [ $(ls /opt/vyatta/config/active/interfaces/bridge | wc -l) \> 0 ] && customconfig="bridge config detected"
+    [ $(ls /opt/vyatta/config/active/interfaces/bridge 2>/dev/null | wc -l) \> 0 ] && customconfig="bridge config detected"
     [ $(grep -Ec "rule 500[01]" /config/config.boot) \> 0 ] && customconfig="masquerade detected"
     [ $(ip -4 a | grep -E "192\.168\.[0-9]{1,3}\.[0-9]{1,3}" | grep -cv "192.168.1.1") \> 0 ] && customconfig="192.168.* found"
     [ $(grep -c "name-server" /config/config.boot) \> 0 ] && customconfig="name servers found"
@@ -200,6 +200,8 @@ BEGIN { val = canon(want) }
         if [ "$n" ] && ! [[ $n =~ $re3 ]]; then
             error="name problem"
         fi
+        [ $(echo "!"$olsrlist | grep -c "!"$v"!") \> 0 ] && error="duplicate port "$v
+        olsrlist=$olsrlist$v"!"
     done
     if   [ "$error" ]; then
         echo "{\"success\":\"0\",\"error\": \"OLSR-VLAN-Settings error - "$error"\"}"
@@ -222,6 +224,8 @@ BEGIN { val = canon(want) }
         if [ "$n" ] && ! [[ $n =~ $re3 ]]; then
             error="name problem"
         fi
+        [ $(echo "!"$portlist | grep -c "!"$(($p))"!") \> 0 ] && error="duplicate port "$(($p))
+        portlist=$portlist$(($p))"!"
     done
     if   [ "$error" ]; then
         echo "{\"success\":\"0\",\"error\": \"Portforwarding-Settings error - "$error"\"}"
@@ -315,6 +319,7 @@ BEGIN { val = canon(want) }
     for l in $olsrvlans; do
         v=$(echo $l | cut -d"," -f1 | awk '{print tolower($0)}')
         n=$(echo $l | cut -d"," -f2)
+        [ "$n" ] || n="OLSR"
         port=$(echo $v | cut -d "." -f1)
         vlan=$((10#$(echo $v | cut -d "." -f2)))
         for e in $existingips; do
@@ -404,10 +409,11 @@ BEGIN { val = canon(want) }
 
     rule=$(sed -n "/nat {/,/^    }/p" /config/config.boot | grep -E "^        rule [0-9]{1,4} \{" | awk '{ print $2}' | grep -vE "5[0-9]{3}" | tail -n 1)
     for l in $portforwardings; do
-        p=$(echo $l | cut -d"," -f1)
+        p=$(($(echo $l | cut -d"," -f1)))
         n=$(echo $l | cut -d"," -f2)
+        [ "$n" ] && n="_"$n
         rule=$(($rule +1))
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" description "$p"_ssl_"$n
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" description "$p"_ssl"$n
         commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination address "$ip
         commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination port "$(($p+1000))
         commandlist[${#commandlist[@]}]="set service nat rule "$rule" inbound-interface br0"
@@ -417,7 +423,7 @@ BEGIN { val = canon(want) }
         commandlist[${#commandlist[@]}]="set service nat rule "$rule" protocol tcp"
         commandlist[${#commandlist[@]}]="set service nat rule "$rule" type destination"
         rule=$(($rule +1))
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" description "$p"_ssh_"$n
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" description "$p"_ssh"$n
         commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination address "$ip
         commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination port "$(($p+1000))"2"
         commandlist[${#commandlist[@]}]="set service nat rule "$rule" inbound-interface br0"
@@ -427,7 +433,7 @@ BEGIN { val = canon(want) }
         commandlist[${#commandlist[@]}]="set service nat rule "$rule" protocol tcp"
         commandlist[${#commandlist[@]}]="set service nat rule "$rule" type destination"
         rule=$(($rule +1))
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" description "$p"_snmp_"$n
+        commandlist[${#commandlist[@]}]="set service nat rule "$rule" description "$p"_snmp"$n
         commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination address "$ip
         commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination port "$(($p+1000))"3"
         commandlist[${#commandlist[@]}]="set service nat rule "$rule" inbound-interface br0"
@@ -438,8 +444,16 @@ BEGIN { val = canon(want) }
         commandlist[${#commandlist[@]}]="set service nat rule "$rule" type destination"
     done
 
-    #DEBUG
-    #for executecmd in "${commandlist[@]}"; do echo $executecmd >>$log; done; exit
+    simulate=$(jq -M -r '.simulate' $INPUT 2>>$log)
+    if [ "$simulate"=="on" ]; then
+        echo "## SIMULATE MODE ##" >>$log
+        for executecmd in "${commandlist[@]}"; do echo $executecmd >>$log; done;
+        echo "## SIMULATE MODE DONE ##" >>$log
+        echo "{\"success\":\"1\"}"
+        exit
+    fi
+
+
 
     cmd="/opt/vyatta/sbin/vyatta-cfg-cmd-wrapper"
 tfile=$(mktemp)
