@@ -211,6 +211,9 @@ BEGIN { val = canon(want) }
     #check portforwardings
     portforwardings=$(jq -M -r '.portforwardings[] | (.port +","+ .name)' $INPUT 2>>$log | sed 's/ /-/g')
     jq -M -r '.portforwardings[] | (.port +","+ .name)'  $INPUT >>$log 2>>$log
+    portssl=$(jq -M -r '.portssl' $INPUT 2>>$log)
+    portssh=$(jq -M -r '.portssh' $INPUT 2>>$log)
+    portsnmp=$(jq -M -r '.portsnmp' $INPUT 2>>$log)
     for l in $portforwardings; do
         p=$(echo $l | cut -d"," -f1)
         n=$(echo $l | cut -d"," -f2)
@@ -227,6 +230,7 @@ BEGIN { val = canon(want) }
         [ $(echo "!"$portlist | grep -c "!"$(($p))"!") \> 0 ] && error="duplicate port "$(($p))
         portlist=$portlist$(($p))"!"
     done
+    [ "$portlist" ] && [ ! "$portssl" ] && [ ! "$portssh" ] && [ ! "$portsnmp" ] && error="neighter of SSL,SSH,SNMP selected"
     if   [ "$error" ]; then
         echo "{\"success\":\"0\",\"error\": \"Portforwarding-Settings error - "$error"\"}"
         exit
@@ -251,7 +255,7 @@ BEGIN { val = canon(want) }
         sshcurrent=$(grep -A3 ssh /config/config.boot | grep port | awk '{ print $2}')
         if ! [[ $sshport =~ $re ]]; then
             error="port not number"
-        elif [ $sshport -ge 99 ]; then
+        elif [ $sshport -ge 9999 ]; then
             error="port number out of range 1..9999"
         elif [ $sshport -le 1 ]; then
             error="port number out of range 1..9999"
@@ -261,6 +265,16 @@ BEGIN { val = canon(want) }
     fi
     if   [ "$error" ]; then
         echo "{\"success\":\"0\",\"error\": \"SSH-Port error - "$error"\"}"
+        exit
+    fi
+    
+    #check EdgeOS version to be at least 1.9.0
+    version=$(cat /root.dev/version | awk '{print $2}' | tr -d 'v')
+    versionmajor=$(echo $version | cut -d "." -f1)
+    versionsub=$(echo $version | cut -d "." -f2)
+    [ $(($versionmajor)) -eq 1 ] && [ $(($versionsub)) -ne 8 ] && error="prior v1.9.0 not supported"
+    if   [ "$error" ]; then
+        echo "{\"success\":\"0\",\"error\": \"Update your FIRMWARE first - "$error"\"}"
         exit
     fi
 
@@ -407,42 +421,52 @@ BEGIN { val = canon(want) }
     
     commandlist[${#commandlist[@]}]="set service ssh port 10"
 
+    portssl=$(jq -M -r '.portssl' $INPUT 2>>$log)
+    portssh=$(jq -M -r '.portssh' $INPUT 2>>$log)
+    portsnmp=$(jq -M -r '.portsnmp' $INPUT 2>>$log)
     rule=$(sed -n "/nat {/,/^    }/p" /config/config.boot | grep -E "^        rule [0-9]{1,4} \{" | awk '{ print $2}' | grep -vE "5[0-9]{3}" | tail -n 1)
     for l in $portforwardings; do
         p=$(($(echo $l | cut -d"," -f1)))
         n=$(echo $l | cut -d"," -f2)
         [ "$n" ] && n="_"$n
-        rule=$(($rule +1))
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" description "$p"_ssl"$n
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination address "$ip
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination port "$(($p+1000))
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inbound-interface br0"
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address address "$lansegment$p
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address port 443"
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" log disable"
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" protocol tcp"
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" type destination"
-        rule=$(($rule +1))
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" description "$p"_ssh"$n
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination address "$ip
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination port "$(($p+1000))"2"
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inbound-interface br0"
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address address "$lansegment$p 
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address port 22"
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" log disable"
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" protocol tcp"
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" type destination"
-        rule=$(($rule +1))
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" description "$p"_snmp"$n
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination address "$ip
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination port "$(($p+1000))"3"
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inbound-interface br0"
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address address "$lansegment$p
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address port 161"
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" log disable"
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" protocol udp"
-        commandlist[${#commandlist[@]}]="set service nat rule "$rule" type destination"
+        if [ "$portssl" == "on" ]; then
+            rule=$(($rule +1))
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" description "$p"_ssl"$n
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination address "$ip
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination port "$(($p+1000))
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" inbound-interface br0"
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address address "$lansegment$p
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address port 443"
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" log disable"
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" protocol tcp"
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" type destination"
+        fi
+        if [ "$portssh" == "on" ]; then
+            rule=$(($rule +1))
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" description "$p"_ssh"$n
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination address "$ip
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination port "$(($p+1000))"2"
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" inbound-interface br0"
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address address "$lansegment$p 
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address port 22"
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" log disable"
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" protocol tcp"
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" type destination"
+        fi
+        if [ "$portsnmp" == "on" ]; then
+            rule=$(($rule +1))
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" description "$p"_snmp"$n
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination address "$ip
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" destination port "$(($p+1000))"3"
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" inbound-interface br0"
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address address "$lansegment$p
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" inside-address port 161"
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" log disable"
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" protocol udp"
+            commandlist[${#commandlist[@]}]="set service nat rule "$rule" type destination"
+        fi
     done
+
 
     simulate=$(jq -M -r '.simulate' $INPUT 2>>$log)
     if [ "$simulate"=="on" ]; then
@@ -25531,9 +25555,20 @@ fi
     echo 'wizard-autoupdate=yes' >>/config/user-data/autoupdate.dat 2>>$log
 
     echo "Finished." >>$log
-    #remove this wizard, then reboot
+    #keep logfile in user-data
     cp $log /config/user-data/0xffsetup.log >/dev/null 2>/dev/null
-    rm -fR $medir >/dev/null 2>/dev/null; reboot
+    #replace wizard.html with a logfile-view static page
+    echo '<div class="instructions">EdgeMAX Wizard "Setup0xFF" LOGFILE</div>
+<legend style="position:absolute;right:0px;padding:5px;"><center>EdgeMAX Wizard "Setup0xFF"<br>created 09/2017 by CPO for FunkFeuer.at</center></legend>
+<fieldset id="basic" name="basic" class="primary expanded"><legend>LOGFILE</legend>
+Your Router has been configured. This is your logfile, saved to <em>/config/user-data/0xffsetup.log</em><br><br>
+<textarea style="resize:none; font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;" 
+name="logfile" cols="100" rows="30">' >$medir"/wizard.html"
+    cat $log >>$medir"/wizard.html"
+    echo '</textarea></fieldset><div class="instructions">Click "Delete from List" to remove this dialog - you will not need it here anymore</div>' >>$medir"/wizard.html"
+    #replace wizard-run with a dummy success script, and REBOOT
+    echo '#!/bin/bash
+echo ''{"success":"1","data":{},"definition":{}}''' >$medir"/wizard-run"; reboot
 }
 
 case "$ACTION" in

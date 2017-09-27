@@ -24,21 +24,23 @@ autoupdate=201701010
     <br><br>
     <table border="0">
       <tr><td width=150 style="vertical-align:middle"><b>Public IPv4</b></td>
-      <td><input style="right:10px" id="ip" name="ip" type="text" size="15" placeholder="78.41.119.000" maxlength="15" /> OLSR-Address from Redeemer<td></tr>
+      <td><input style="right:10px" id="ip" name="ip" type="text" size="15" placeholder="78.41.119.000" maxlength="15" title="IPv4 address without subnet suffix" /> OLSR-Address from Redeemer<td></tr>
       <tr><td>&nbsp;</td><td>This will be the Public IPv4 Address from the Range 78.41.112.0/21 or 193.238.156.0/22. 
       The IPv4 adress you enter here will be assigned to interface br0 with Subnet-Suffix /32 for olsr(v1), bridge-members 
       will be all eth-ports natively (no vlan tag), that are NOT enabled as LAN-Interface or as Web-Access-Interface (see optional settings section below).
       In case you need tagged OLSR traffic on at least one eth-port, enter the needed interfaces/vlans in the optional settings section. </td></tr>
       <tr><td>&nbsp;</td><td><input style="right:10px" id="eui64address" name="eui64address" type="text" size="40" disabled /> OLSRv2 IPv6 Address </td></tr>
-      <tr><td>&nbsp;</td><td>OLSRd2 will fire up using this EUI64-style IPv6 address, what is calculated from your routers unique MAC address. This field is read-only.</td></tr>
+      <tr><td>&nbsp;</td><td>OLSRv2 will fire up using this EUI64-style IPv6 address, what is calculated from your routers unique MAC address. This field is read-only.</td></tr>
       <tr><td colspan=2><hr></td></tr>
 
       <tr><td style="vertical-align:middle"><b>Node-ID</b></td>
-      <td><input style="right:10px" id="nodeid" name="nodeid" type="text" size="5" placeholder="2222" maxlength="5" /> Numeric Node-ID from Redeemer<td></tr>
+      <td><input style="right:10px" id="nodeid" name="nodeid" type="text" size="5" placeholder="2222" maxlength="5" title="numeric nodeid this router will be used for" /> Numeric Node-ID from Redeemer<td></tr>
       <tr><td>&nbsp;</td><td>This ID will be used for the local Management-Network from the Range 10.xxx.yy.100/24 (i.e. nodeid <em>12345</em> 
       will result in 10.<em>123.45</em>.100/24). This Subnet is dedicated for your local AirOS-Antennas' Management Interface: in AirOS, use Network-Settings-Mode "Advanced"
-      to configure the IP settings for vlan 1100 to 10.xxx.yy.NNN/255.255.255.0 with Gateway 10.xxx.yy.100 (NNN can be any number between 1 and 99, i.e. 10.123.45.1 for your first Antenna).<br>
-      Use "Create Portforwardings for AirOS-Antennas" section in the optional settings below to enable forwarding from i.e. https://yourpublicip:1001/ to the management interface from your Antenna 1.
+      to configure the IP settings for vlan 1100 to 10.xxx.yy.NNN/255.255.255.0 with Gateway 10.xxx.yy.100 (NNN can be any number between 1 and 99, i.e. 10.123.45.1 for your first Antenna).
+      Use "Antenna-IPs" section in the optional settings below to enable forwarding from i.e. https://yourpublicip:1001/ to the management interface from your Antenna-1.<br>
+      To find out the nodeid of your node, look for the URL-parameter "id=" from the links in your redeemer pages: it will look somehow 
+      like <em>https://portal.funkfeuer.at/wien/index.php?section=nodes&id_members=1234&action=show&<b>id=2222</b></em>.
       </td></tr>
     </table>
 </fieldset>
@@ -49,17 +51,17 @@ autoupdate=201701010
     <br><br>
     <table border="0">
       <tr><td width=150 style="vertical-align:middle"><b>Routername</b></td>
-      <td><input style="right:10px" id="routername" name="routername" type="text" size="25" placeholder="test-router" maxlength="30" /> Hostname (usually YOURNODENAME-router)<td></tr>
+      <td><input style="right:10px" id="routername" name="routername" type="text" size="25" placeholder="test-router" maxlength="30" title="lowercase router hostname" /> Hostname (usually YOURNODENAME-router)<td></tr>
       <tr><td>&nbsp;</td><td>Assign a reasonable hostname to your router (don't forget to replace YOURNODENAME by the nodename of your node).</td></tr>
       <tr><td colspan=2><hr></td></tr>
 
       <tr><td style="vertical-align:middle"><b>SSH-Port</b></td>
-      <td><input style="right:10px" id="laninterface" name="sshport" type="text" size="9" value="10" maxlength="5" /> Change default ssh-port?<td></tr>
+      <td><input style="right:10px" id="laninterface" name="sshport" type="text" size="9" value="10" maxlength="5" title="port number between 1 and 9999 used to listen for ssh connections" /> Change default ssh-port?<td></tr>
       <tr><td>&nbsp;</td><td>Changing the SSH-Port from 22 to another will reduce the risk of exploits. Common on Funkfeuer-Edgerouters is port '10'</td></tr>
       <tr><td colspan=2><hr></td></tr>
 
       <tr><td style="vertical-align:middle"><b>Username</b></td>
-      <td><input style="right:10px" id="laninterface" name="usnername" type="text" size="9" placeholder="ubnt" maxlength="20" /> Change default username?<td></tr>
+      <td><input style="right:10px" id="laninterface" name="usnername" type="text" size="9" placeholder="ubnt" maxlength="20" title="lowercase username" /> Change default username?<td></tr>
       <tr><td>&nbsp;</td><td>Changing the default username to another will reduce the risk of exploits. The current login password of user 'ubnt' will  be taken 
                              over to your new user name. Common on Funkfeuer-Edgerouter is 'ubnt' or 'funkfeuer'.</td></tr>
     </table>
@@ -70,8 +72,8 @@ autoupdate=201701010
     Here you can configure advanced settings for your interfaces.
     <br><br>
     <table border="0">
-      <tr><td style="vertical-align:middle"><b>LAN-Interface</b></td>
-      <td><input style="right:10px" id="laninterface" name="laninterface" type="text" size="9" placeholder="eth0" maxlength="9" /> Let local clients connect to the web.<td></tr>
+      <tr><td width=150 style="vertical-align:middle"><b>LAN-Interface</b></td>
+      <td><input style="right:10px" id="laninterface" name="laninterface" type="text" size="9" placeholder="eth0" maxlength="9" title="eth-port, vlan optional, i.e. eth0.200" /> Let local clients connect to the web.<td></tr>
       <tr><td>&nbsp;</td><td>Interface which will be NAT/LAN for local clients to connect to the internet. This interface will use 192.168.1.1/24 with 
                              DHCP-server enabled and will do NAT/masquerade to your public 0xFF-Funkfeuer IP address on br0.<br>
                              If you need to access the routers WebGUI after clicking on "Apply" and have no working OLSR connection right away, this might be an easy (and the only?)
@@ -79,7 +81,7 @@ autoupdate=201701010
       <tr><td colspan=2><hr></td></tr>
 
       <tr><td style="vertical-align:middle"><b>Web-Access</b></td>
-      <td><input style="right:10px" id="webinterface" name="webinterface" type="text" size="9" placeholder="eth0.300" maxlength="9" /> NAT-Network from an existing ISP?<td></tr>
+      <td><input style="right:10px" id="webinterface" name="webinterface" type="text" size="9" placeholder="eth1.300" maxlength="9" title="eth-port, vlan optional, i.e. eth0.300" /> NAT-Network from an existing ISP?<td></tr>
       <tr><td>&nbsp;</td><td>Interface which connects to the NAT-Router of your existing Internet Service Provider. This interface will optain it's address via DHCP-client 
                              and should NOT use 192.168.1.0/24 when LAN-Interface is used (field above).<br>
                              If you need to access the routers WebGUI after clicking on "Apply" and have no working OLSR connection right away, this might be an easy (and the only?)
@@ -95,9 +97,9 @@ autoupdate=201701010
         <div class="addable-template" style="padding-top:0px;">
         <div class="multi">
         <span class="text" style="top:5px">Port.VLAN</span>
-        <span><input name="interface" size="9" placeholder="eth0.100" /></span>
+        <span><input name="interface" size="9" placeholder="eth0.100" title="eth-port and vlan, i.e. eth0.400" /></span>
         <span class="text" style="top:5px">Name</span>
-        <span><input name="name" size="16" placeholder="OLSR" /></span>
+        <span><input name="name" size="16" placeholder="OLSR" title="Name for Interface-Description" /></span>
         <span><button type="button" class="addable-remove">Remove</button></span>
         </div>
         </div>
@@ -115,13 +117,18 @@ autoupdate=201701010
       <tr><td style="vertical-align:middle"><b>Antenna-IPs</b></td>
       <td>Configure Portforwardings to AirOS Management Interfaces<td></tr>
       <tr><td>&nbsp;</td><td>
+      HTTPS:100n <input id="portssl" name="portssl" type="checkbox" checked /> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      SSH:100n2 <input id="portssh" name="portssh" type="checkbox" checked /> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      SNMP:100n3 <input id="portsnmp" name="portsnmp" type="checkbox" checked />  
+        </td></tr>
+      <tr><td>&nbsp;</td><td>
         <div class="addable" data-min="0" data-max="20" data-object="portforwardings" data-objectify="1">
         <div class="addable-template" style="padding-top:0px;">
         <div class="multi">
         <span class="text" style="top:5px">10.xxx.yy.</span>
-        <span><input name="port" size="3" placeholder="000" /></span>
+        <span><input name="port" size="3" placeholder="000" title="number between 1 and 99 - the last octet from your antenna's LAN IP address" /></span>
         <span class="text" style="top:5px">Name</span>
-        <span><input name="name" size="25" placeholder="Antenna-1" /></span>
+        <span><input name="name" size="25" placeholder="Antenna-000" title="name/id of antenna, used as description of NAT-rule" /></span>
         <span><button type="button" class="addable-remove">Remove</button></span>
         </div>
         </div>
@@ -130,7 +137,7 @@ autoupdate=201701010
         </div>
         </td></tr>
       <tr><td>&nbsp;</td><td>Use this list of Ports/IPs in order to set up portforwarding rules from you public IP of br0 to your Management-IPs of
-      your AirOS devices in vlan 1100. For each Antenna, the TCP-Ports 100x (for SSL-HTTPS) and 100x2 (for SSH) and the UDP-Port 100x3 (for SNMP) will 
+      your AirOS devices in vlan 1100. For each Antenna, the TCP-Ports 100n (for SSL-HTTPS) and 100n2 (for SSH) and the UDP-Port 100n3 (for SNMP) will 
       bei created (i.E. for Antenne with IP address 10.xxx.yyy.9 the Pors 1009,10092,10093 will be used): https://yourpublicip:1009/ for AirOS-WebUI,
       "ssh yourpublicip -p 10092" for ssh access.
         </td></tr>
