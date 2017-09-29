@@ -388,13 +388,16 @@ BEGIN { val = canon(want) }
         commandlist[${#commandlist[@]}]="set service nat rule 5001 source address 192.168.1.0/24"
         commandlist[${#commandlist[@]}]="set service nat rule 5001 type masquerade"
         commandlist[${#commandlist[@]}]="set port-forward lan-interface "$laninterface
-        commandlist[${#commandlist[@]}]="set service dhcp-server shared-network-name NAT-Funkfeuer-LAN authoritative disable"
-        commandlist[${#commandlist[@]}]="set service dhcp-server shared-network-name NAT-Funkfeuer-LAN subnet 192.168.1.0/24 default-router 192.168.1.1"
-        commandlist[${#commandlist[@]}]="set service dhcp-server shared-network-name NAT-Funkfeuer-LAN subnet 192.168.1.0/24 dns-server 8.8.8.8"
-        commandlist[${#commandlist[@]}]="set service dhcp-server shared-network-name NAT-Funkfeuer-LAN subnet 192.168.1.0/24 dns-server 4.4.4.4"
-        commandlist[${#commandlist[@]}]="set service dhcp-server shared-network-name NAT-Funkfeuer-LAN subnet 192.168.1.0/24 lease 86400"
-        commandlist[${#commandlist[@]}]="set service dhcp-server shared-network-name NAT-Funkfeuer-LAN subnet 192.168.1.0/24 start 192.168.1.50 stop 192.168.1.199"
-        commandlist[${#commandlist[@]}]="set service dhcp-server use-dnsmasq disable"
+        landhcp=$(jq -M -r '.landhcp' $INPUT 2>>$log)
+        if [ "$landhcp" == "on" ]; then
+            commandlist[${#commandlist[@]}]="set service dhcp-server shared-network-name NAT-Funkfeuer-LAN authoritative disable"
+            commandlist[${#commandlist[@]}]="set service dhcp-server shared-network-name NAT-Funkfeuer-LAN subnet 192.168.1.0/24 default-router 192.168.1.1"
+            commandlist[${#commandlist[@]}]="set service dhcp-server shared-network-name NAT-Funkfeuer-LAN subnet 192.168.1.0/24 dns-server 8.8.8.8"
+            commandlist[${#commandlist[@]}]="set service dhcp-server shared-network-name NAT-Funkfeuer-LAN subnet 192.168.1.0/24 dns-server 4.4.4.4"
+            commandlist[${#commandlist[@]}]="set service dhcp-server shared-network-name NAT-Funkfeuer-LAN subnet 192.168.1.0/24 lease 86400"
+            commandlist[${#commandlist[@]}]="set service dhcp-server shared-network-name NAT-Funkfeuer-LAN subnet 192.168.1.0/24 start 192.168.1.50 stop 192.168.1.199"
+            commandlist[${#commandlist[@]}]="set service dhcp-server use-dnsmasq disable"
+        fi
     fi
 
     if [ "$webinterface" ]; then
