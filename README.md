@@ -16,8 +16,8 @@ Fill in your settings (description and explanation within the Wizard UI) and cli
 * username (default: ubnt)
 
 ### advanced
-* LAN interface/vlan (default: eth0)
-* Web interface/vlan
+* LAN interface/vlan (default: eth0) with dhcp-server off/on (default:on)
+* Web interface/vlan (dhcp-client on)
 * Portforwardings for Antennas
 * additional vlan-tagged OLSR interfaces
 
