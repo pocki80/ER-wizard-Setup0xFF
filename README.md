@@ -3,7 +3,7 @@ Wizard for initial 0xFF configuration
 
 A few options and only one click: this EdgeRouter-Wizard transforms a factory-setting EdgeOS to a ready-to-use Router-Konfiguration for 0xFF-Funkfeuer.at!
 
-Fill in your settings (description and explanation within the Wizard UI) and click "Apply". After reboot, your router is ready to go and the wizard will show the logfile from configuration procedure.
+Fill in your settings (description and explanation within the Wizard UI) and click "Apply". After 20-30 seconds, your router is ready to go without reboot and the wizard will show the logfile from configuration procedure.
 
 ## Options
 ### obligatory
@@ -12,11 +12,11 @@ Fill in your settings (description and explanation within the Wizard UI) and cli
 
 ### optional
 * hostname
-* ssh-port
-* username
+* ssh-port (default: 10)
+* username (default: ubnt)
 
 ### advanced
-* LAN interface/vlan
+* LAN interface/vlan (default: eth0)
 * Web interface/vlan
 * Portforwardings for Antennas
 * additional vlan-tagged OLSR interfaces
