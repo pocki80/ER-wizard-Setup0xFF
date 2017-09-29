@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "ER-wizard-Setup0xFF" created 09/2017 by CPO for FunkFeuer.at
-# Version 20170927
+# Version 20170929
 # ^-- previous line is used frombmk-webstatus-package as version identification, dont remove "Version "
 # Shortform: Setup0xFF
 #
@@ -135,20 +135,19 @@ BEGIN { val = canon(want) }
         exit
     fi
 
-    routername=$(jq -M -r '.routername' $INPUT 2>>$log)
+    routername=$(jq -M -r '.routername' $INPUT 2>>$log | awk '{print tolower($0)}')
     #check routername: not allow router -router YOURNODENAME-router node-router nodename-router
     if [ "$routername" == "router" ] || 
        [ "$routername" == "-router" ] ||
        [ "$routername" == "node-router" ] ||
-       [ "$routername" == "NODE-router" ] ||
+       [ "$routername" == "yournode-router" ] ||
        [ $(echo "$routername" | grep -ic nodename) \> 0 ]; then
         echo "{\"success\":\"0\",\"error\": \"ROUTERNAME should be more individual\"}"
         exit
     fi
     if [ "$routername" ]; then
-        re3='^[0-9a-zA-Z-]+$'
-        if ! [[ $routername =~ $re3 ]]; then
-            echo "{\"success\":\"0\",\"error\": \"ROUTERNAME contains problematic characters, use [0-9a-zA-Z]\"}"
+        if ! [[ $routername =~ $re4 ]]; then
+            echo "{\"success\":\"0\",\"error\": \"ROUTERNAME contains problematic characters, use [0-9a-z-]\"}"
             exit
         fi
     fi
@@ -25568,9 +25567,9 @@ Your Router has been configured. This is your logfile, saved to <em>/config/user
 name="logfile" cols="100" rows="30">' >$medir"/wizard.html"
     cat $log >>$medir"/wizard.html"
     echo '</textarea></fieldset><div class="instructions">Click "Delete from List" to remove this dialog - you will not need it here anymore</div>' >>$medir"/wizard.html"
-    #replace wizard-run with a dummy success script, and REBOOT
+    #replace wizard-run with a dummy success script
     echo '#!/bin/bash
-echo "{\"success\":\"1\",\"data\":{},\"definition\":{}}"' >$medir"/wizard-run"; reboot
+echo "{\"success\":\"1\",\"data\":{},\"definition\":{}}"' >$medir"/wizard-run"
 }
 
 case "$ACTION" in
