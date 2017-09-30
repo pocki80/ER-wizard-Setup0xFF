@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "ER-wizard-Setup0xFF" created 09/2017 by CPO for FunkFeuer.at
-# Version 20170929
+# Version 20170930
 # ^-- previous line is used frombmk-webstatus-package as version identification, dont remove "Version "
 # Shortform: Setup0xFF
 #
@@ -203,9 +203,9 @@ BEGIN { val = canon(want) }
         n=$(echo $l | cut -d"," -f2)
         if ! [[ $p =~ $re ]]; then
             error="port not number"
-        elif [ $p -ge 99 ]; then
+        elif [ $p -ge 100 ]; then
             error="port number out of range 1..9999"
-        elif [ $p -le 1 ]; then
+        elif [ $p -le 0 ]; then
             error="port number out of range 1..9999"
         fi
         if [ "$n" ] && ! [[ $n =~ $re3 ]]; then
