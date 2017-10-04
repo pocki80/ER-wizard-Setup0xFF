@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "ER-wizard-Setup0xFF" created 09/2017 by CPO for FunkFeuer.at
-# Version 20170930
+# Version 20171004
 # ^-- previous line is used frombmk-webstatus-package as version identification, dont remove "Version "
 # Shortform: Setup0xFF
 #
@@ -25571,8 +25571,14 @@ name="logfile" cols="100" rows="30">' >$medir"/wizard.html"
     cat $log >>$medir"/wizard.html"
     echo '</textarea></fieldset><div class="instructions">Click "Delete from List" to remove this dialog - you will not need it here anymore</div>' >>$medir"/wizard.html"
     #replace wizard-run with a dummy success script
-    echo '#!/bin/bash
-echo "{\"success\":\"1\",\"data\":{},\"definition\":{}}"' >$medir"/wizard-run"
+    cat >$medir"/wizard-run" <<'ENDSCRIPTCONTENT'
+#!/bin/bash
+if [[ $(grep -c textarea $medir"/wizard.html") -eq 0 ]]; then
+  echo "{\"success\":\"1\",\"data\":{},\"definition\":{}}"
+else
+  echo "{\"success\":\"0\",\"error\": \"Config was applied already: RELOAD page to see your logfile\"}"
+fi
+ENDSCRIPTCONTENT
 }
 
 case "$ACTION" in
