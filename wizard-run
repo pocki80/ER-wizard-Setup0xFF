@@ -100,7 +100,7 @@ apply () {
     cp $INPUT /tmp/result.json 2>/dev/null
     echo "## Starting - this is your config ##" >$log
     cat $INPUT >>$log
-    echo "## Preparing configuration... ##" >$log
+    echo "## Preparing configuration... ##" >>$log
     re='^[0-9]+$'
     re3='^[0-9a-zA-Z-]+$'
     re4='^[0-9a-z-]+$'
@@ -469,7 +469,7 @@ BEGIN { val = canon(want) }
             commandlist[${#commandlist[@]}]="set service nat rule "$rule" type destination"
         fi
     done
-    echo "## Configuration ready ##" >$log
+    echo "## Configuration ready ##" >>$log
 
     simulate=$(jq -M -r '.simulate' $INPUT 2>>$log)
     if [ "$simulate" == "on" ]; then
