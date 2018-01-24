@@ -3,7 +3,7 @@ Wizard for initial 0xFF configuration
 
 A few options and only one click: this EdgeRouter-Wizard transforms a factory-setting EdgeOS to a ready-to-use Router-Konfiguration for 0xFF-Funkfeuer.at!
 
-Fill in your settings (description and explanation within the Wizard UI) and click "Apply". After 20-30 seconds, your router is ready to go without reboot and the wizard will show the logfile from configuration procedure.
+Fill in your settings (description and explanation within the Wizard UI) and click "Apply". After 45-120 seconds, your router is ready to go without reboot and the wizard will show the logfile from configuration procedure.
 
 ## Options
 ### obligatory
@@ -24,6 +24,8 @@ Fill in your settings (description and explanation within the Wizard UI) and cli
 ## Included Software Components
 * olsrd_v1 wizard 0.9.0.3: https://github.com/vchrizz/ER-wizard-OLSRd_V1
 * olsrd_v2 wizard 0.14.1-16: https://github.com/pocki80/ER-wizard-OLSRd_V2
+* ebtables wizard: https://github.com/pocki80/ER-wizard-ebtables
+* WSLE webstatus wizard: https://github.com/pocki80/ER-wizard-0xFF-WSLE
 
 ## Prerequisites
 * factory settings:
