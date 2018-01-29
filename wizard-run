@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "ER-wizard-Setup0xFF" created 09/2017 by CPO for FunkFeuer.at
-# Version 201801241
+# Version 201801290
 # ^-- previous line is used frombmk-webstatus-package as version identification, dont remove "Version "
 # Shortform: Setup0xFF
 #
@@ -312,7 +312,7 @@ BEGIN { val = canon(want) }
     done
     [ $commitneeded ] && commandlist[${#commandlist[@]}]="commit" && commitneeded=""
 
-    managamentbr1=$(jq -M -r '.managamentbr1' $INPUT 2>>$log)
+    managementbr=$(jq -M -r '.managementbr' $INPUT 2>>$log)
 
     #create bridge br0 and add interfaces
     commandlist[${#commandlist[@]}]="set interfaces bridge br0 address "$ip$"/32"
@@ -325,7 +325,7 @@ BEGIN { val = canon(want) }
     commandlist[${#commandlist[@]}]="set interfaces bridge br0 promiscuous disable"
     commandlist[${#commandlist[@]}]="set interfaces bridge br0 stp false"
 	
-	if [ "$managamentbr1" == "on" ]; then
+	if [ "$managementbr" == "on" ]; then
 		commandlist[${#commandlist[@]}]="commit"
 		commandlist[${#commandlist[@]}]="set interfaces bridge br1 address "$lansegment"100/24"
 		commandlist[${#commandlist[@]}]="set interfaces bridge br1 description MNGT"
@@ -346,7 +346,7 @@ BEGIN { val = canon(want) }
     for i in "${br0list[@]}"; do
         commandlist[${#commandlist[@]}]="set interfaces ethernet "$i" bridge-group bridge br0"
         commandlist[${#commandlist[@]}]="set interfaces ethernet "$i" description OLSR"
-		if [ "$managamentbr1" == "on" ]; then
+		if [ "$managementbr" == "on" ]; then
 			commandlist[${#commandlist[@]}]="set interfaces ethernet "$i" vif 1100 bridge-group bridge br1"
 			commandlist[${#commandlist[@]}]="set interfaces ethernet "$i" vif 1100 description MNGT"
 		fi
@@ -374,7 +374,7 @@ BEGIN { val = canon(want) }
     
     commandlist[${#commandlist[@]}]="set port-forward auto-firewall enable"
     commandlist[${#commandlist[@]}]="set port-forward hairpin-nat enable"
-	if [ "$managamentbr1" == "on" ]; then
+	if [ "$managementbr" == "on" ]; then
 		commandlist[${#commandlist[@]}]="set port-forward lan-interface br1"
 	else
 		commandlist[${#commandlist[@]}]="set port-forward lan-interface br0.1100"
