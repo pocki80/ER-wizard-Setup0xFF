@@ -1,167 +1,92 @@
 <!--
 
-EdgeMAX Wizard "Setup0xFF" created 09/2017 by CPO for FunkFeuer.at
+EdgeMAX Wizard "ER-wizard-ebtables" created 05/2017 by CPO for FunkFeuer.at
 Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.9.0+)
-versioninfo=201801241
+versioninfo=201801270
 ^-- use version identifier as number: YYYYMMDDX whereas X can be intraday-version
-autoupdate=201701010
+autoupdate=201706200
 ^-- set autoupdate the same version identifier to allow autoupdates
+
 
 -->
 <div class="instructions">
-  EdgeMAX Wizard "Setup0xFF"
+    <h3>EBTABLES</h3>
 </div>
 <legend style="position:absolute;right:0px;padding:5px;">
-    <center>EdgeMAX Wizard "Setup0xFF"<br>created 09/2017 by CPO for FunkFeuer.at<br>
-    Version 20180124</center>
+    <center>EdgeMAX Wizard "ER-wizard-ebtables"<br>created 05/2017 by CPO for FunkFeuer.at<br>
+    Version 20180127</center>
 </legend>
-
-<fieldset id="basic" name="basic" class="primary expanded">
-    <legend>Basic-Settings</legend>
-    These fields are obligatory to setup your router for 0xFF-Funkfeuer.at. 
-    Obtain your public IP-Address from <a href="https://portal.funkfeuer.at/" target="_blank">https://portal.funkfeuer.at/</a>. 
-    There you can see the numeric Node-ID for your node, as well.
-    <br><br>
-    <table border="0">
-      <tr><td width=150 style="vertical-align:middle"><b>Public IPv4</b></td>
-      <td><input style="right:10px" id="ip" name="ip" type="text" size="15" placeholder="78.41.119.000" maxlength="15" title="IPv4 address without subnet suffix" /> OLSR-Address from Redeemer<td></tr>
-      <tr><td>&nbsp;</td><td>This will be the public IPv4 address from the Range 78.41.112.0/21 or 193.238.156.0/22. 
-      The IPv4 adress you enter here will be assigned to interface br0 with Subnet-Suffix /32 for olsr(v1), bridge-members 
-      will be all eth-ports natively (no vlan tag), that are NOT enabled as LAN-Interface or as Web-Access-Interface (see advanced settings section below).
-      In case you need tagged OLSR traffic on at least one eth-port, enter the needed interfaces/vlans in the advanced settings section. </td></tr>
-      <tr><td>&nbsp;</td><td><input style="right:10px" id="eui64address" name="eui64address" type="text" size="40" disabled /> OLSRv2 IPv6 Address </td></tr>
-      <tr><td>&nbsp;</td><td>OLSRv2 will fire up using this EUI64-style IPv6 address, what is calculated from your routers unique MAC address. This field is read-only.</td></tr>
-      <tr><td colspan=2><hr></td></tr>
-
-      <tr><td style="vertical-align:middle"><b>Node-ID</b></td>
-      <td><input style="right:10px" id="nodeid" name="nodeid" type="text" size="5" placeholder="2222" maxlength="5" title="numeric nodeid this router will be used for" /> Numeric Node-ID from Redeemer<td></tr>
-      <tr><td>&nbsp;</td><td>This ID will be used for the local Management-Network from the Range 10.xxx.yy.100/24 (i.e. nodeid <em>12345</em> 
-      will result in 10.<em>123.45</em>.100/24). This Subnet is dedicated for your local AirOS-Antennas' Management Interface: in AirOS, use Network-Settings-Mode "Advanced"
-      to configure the IP settings for vlan 1100 to 10.xxx.yy.NNN/255.255.255.0 with Gateway 10.xxx.yy.100 (NNN can be any number between 1 and 99, i.e. 10.123.45.1 for your first Antenna).
-      Use "Antenna-IPs" section in the optional settings below to enable forwarding from i.e. https://yourpublicip:1001/ to the management interface from your Antenna-1.<br>
-      To find out the nodeid of your node, look for the URL-parameter "id=" from the links in your redeemer pages: it will look somehow 
-      like <em>https://portal.funkfeuer.at/wien/index.php?section=nodes&id_members=1234&action=show&<b>id=2222</b></em>.
-      </td></tr>
-      <tr><td colspan=2><hr></td></tr>
-
-      <tr><td style="vertical-align:middle"><b>Management-LAN</b></td>
-      <td><input id="managementbr" name="managamentbr" type="checkbox" checked /> Use bridge br1 for Management-VLAN 1100<td></tr>
-      <tr><td>&nbsp;</td><td>Check this to add all eth-ports' vlan 1100 to a dedicated bridge br1. If you uncheck this option, vlan 1100 will be added as virtual-interface of br0,
-	  so that the management network is dedicated to the interface br0.1100 instead of br1.
-      </td></tr>
-   </table>
-</fieldset>
-
-<fieldset id="optional" name="optional" class="primary expanded">
-    <legend>Additional-Settings</legend>
-    Here you can configure optional settings for your router.
-    <br><br>
-    <table border="0">
-      <tr><td width=150 style="vertical-align:middle"><b>Routername</b></td>
-      <td><input style="right:10px" id="routername" name="routername" type="text" size="25" placeholder="test-router" maxlength="30" title="lowercase router hostname" /> Hostname (usually YOURNODENAME-router)<td></tr>
-      <tr><td>&nbsp;</td><td>Assign a reasonable hostname to your router (don't forget to replace YOURNODENAME by the nodename of your node).</td></tr>
-      <tr><td colspan=2><hr></td></tr>
-
-      <tr><td style="vertical-align:middle"><b>SSH-Port</b></td>
-      <td><input style="right:10px" id="sshport" name="sshport" type="text" size="9" value="10" maxlength="5" title="port number between 1 and 9999 used to listen for ssh connections" /> Change default ssh-port?<td></tr>
-      <tr><td>&nbsp;</td><td>Changing the SSH port from 22 to another will reduce the risk of exploits. Common on Funkfeuer-Edgerouters is port '10'</td></tr>
-      <tr><td colspan=2><hr></td></tr>
-
-      <tr><td style="vertical-align:middle"><b>Username</b></td>
-      <td><input style="right:10px" id="username" name="username" type="text" size="9" placeholder="ubnt" maxlength="20" title="lowercase username" /> Change default username?<td></tr>
-      <tr><td>&nbsp;</td><td>Changing the default username to another will reduce the risk of exploits. The current login password of user 'ubnt' will be taken 
-                             over to your new username. Common on Funkfeuer-Edgerouter is 'ubnt' or 'funkfeuer'.</td></tr>
-    </table>
-</fieldset>
-
-<fieldset id="advanced" name="advanced" class="primary expanded">
-    <legend>Advanced-Settings</legend>
-    Here you can configure advanced settings for your interfaces.
-    <br><br>
-    <table border="0">
-      <tr><td width=150 style="vertical-align:middle"><b>LAN-Interface</b></td>
-      <td><input style="right:10px" id="laninterface" name="laninterface" type="text" size="9" value="eth0" maxlength="9" title="eth-port, vlan optional, i.e. eth0.200" /> - enable DHCP-server:<input id="landhcp" name="landhcp" type="checkbox" checked /><td></tr>
-      <tr><td>&nbsp;</td><td>Interface which will be NAT/LAN for local clients to connect to the internet. This interface will use 192.168.1.1/24, enables 
-                             DHCP-server (if checkbox selected) and will do NAT/masquerade to your public 0xFF-Funkfeuer IP address on br0.<br>
-                             If you need eth0 to be an OLSR-interface, remove "eth0" from this field. In such case: you will need a different way to connect to this WebUI. </td></tr>
-      <tr><td colspan=2><hr></td></tr>
-
-      <tr><td style="vertical-align:middle"><b>NAT-Client</b></td>
-      <td><input style="right:10px" id="webinterface" name="webinterface" type="text" size="9" placeholder="eth1.300" maxlength="9" title="eth-port, vlan optional, i.e. eth0.300" /> NAT-Network from an existing ISP?<td></tr>
-      <tr><td>&nbsp;</td><td>Interface which connects to a NAT router of your existing Internet Service Provider. This interface will optain it's address via DHCP-client 
-                             and should NOT use 192.168.1.0/24 when LAN-Interface is used (field above).<br>
-                             </td></tr>
-      <tr><td colspan=2><hr></td></tr>
-
-      <tr><td style="vertical-align:middle"><b>OLSR-VLANs</b></td>
-      <td>Assign additional vlan-tagged OLSR interfaces to br0<td></tr>
-      <tr><td>&nbsp;</td><td>
-        <div class="addable" data-min="0" data-max="20" data-object="olsrvlans" data-objectify="1">
-        <div class="addable-template" style="padding-top:0px;">
-        <div class="multi">
-        <span class="text" style="top:5px">Port.VLAN</span>
-        <span><input name="interface" size="9" placeholder="eth0.100" title="eth-port and vlan, i.e. eth0.400" /></span>
-        <span class="text" style="top:5px">Name</span>
-        <span><input name="name" size="16" placeholder="OLSR" title="Name for interface description" /></span>
-        <span><button type="button" class="addable-remove">Remove</button></span>
-        </div>
-        </div>
-        <div class="addable-container"></div>
-        <button type="button" class="addable-add">Add</button>
-        </div>
-        </td></tr>
-      <tr><td>&nbsp;</td><td>Use this list of Interfaces, if your antennas do not all connect to a dedicated eth-port of your router. All interfaces
-        added in this list will be created and added to br0 additionally. This is usefull if i.e. a switch is connected between your router and your multiple
-        antennas, or if an OLSR neighbor is connected using a tagged vlan, or if an eth-port connects to a Ubiquiti NanoStation M5 having another antenna(s)
-        cascaded on its secondary ethernet port.
-        </td></tr>
-
-      <tr><td colspan=2><hr></td></tr>
-      <tr><td style="vertical-align:middle"><b>Antenna-IPs</b></td>
-      <td>Configure Portforwardings to AirOS Management Interfaces<td></tr>
-      <tr><td>&nbsp;</td><td>
-      HTTPS:100n <input id="portssl" name="portssl" type="checkbox" checked /> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      SSH:100n2 <input id="portssh" name="portssh" type="checkbox" checked /> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      SNMP:100n3 <input id="portsnmp" name="portsnmp" type="checkbox" checked />  
-        </td></tr>
-      <tr><td>&nbsp;</td><td>
-        <div class="addable" data-min="0" data-max="20" data-object="portforwardings" data-objectify="1">
-        <div class="addable-template" style="padding-top:0px;">
-        <div class="multi">
-        <span class="text" style="top:5px">10.xxx.yy.</span>
-        <span><input name="port" size="3" placeholder="000" title="number between 1 and 99 - the last octet from your antenna's LAN IP address" /></span>
-        <span class="text" style="top:5px">Name</span>
-        <span><input name="name" size="25" placeholder="Antenna-000" title="name/id of antenna, used as description of NAT-rule" /></span>
-        <span><button type="button" class="addable-remove">Remove</button></span>
-        </div>
-        </div>
-        <div class="addable-container"></div>
-        <button type="button" class="addable-add">Add</button>
-        </div>
-        </td></tr>
-      <tr><td>&nbsp;</td><td>Use this list of IPs in order to set up portforwarding rules from you public IP of br0 to your Management-IPs of
-      your AirOS devices in vlan 1100. For each Antenna, the TCP-Ports 100n (for SSL-HTTPS) and 100n2 (for SSH) and the UDP-Port 100n3 (for SNMP) will 
-      bei created (i.e. for Antenna with IP address 10.xxx.yy.9 the Ports 1009,10092,10093 will be used): https://yourpublicip:1009/ for AirOS-WebUI,
-      "ssh user@yourpublicip -p 10092" for ssh access.
-        </td></tr>
-    </table>
-</fieldset>
-
-<div class="instructions">
-On clicking "Apply", this wizard will configure your interfaces according the entered information above and will install/startup OLSRd(v1+v2) routing daemons.
-In case you connected to <em>192.168.1.1</em> via <em>eth0</em> and did NOT enter "eth0" in the Field "LAN-Interface", you will need to re-login on another interface. 
-In that case, the wizard session will not receive a "successfully applied" response, so do not bother about the unspecific error "apply failed"
-after some time. Real errors will show up within a few seconds and with a more specific reason.<br>
-After configuration has finished, reload this wizard using the "Reload-Page" option of your browser in order to see the logfile.<br>
-<br>
-<input id="simulate" name="simulate" type="checkbox" /> <b>Simulate only</b> - if activated, this wizard will only verify the fields you entered and WILL NOT 
-perform any changes in configuration or any software installation. Use this feature to check if all entered data is ok: the message
-"Apply successful" will tell you so. In case all was fine, you may uncheck this option and click on Apply again (no need to re-load and re-enter all the fields).<br>
-Look at <em>/var/log/0xffsetup.log</em> for your configuration commands.
+<div style="padding:15px;border: 1px solid lightgray;width:648px">
+  <table border="0">
+    <tr><td style="vertical-align:middle">Update Info:</td>   <td><input style="right:10px" id="updatestatus" name="updatestatus" type="text" size="60" disabled /></td></tr>
+    <tr><td colspan="2"><div><span><input id="updatefromgithub" name="updatefromgithub" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='Load and install newest version directly from Github'> Upgrade Wizard from GitHub (online only) on 'Apply'</span></div></td></tr>
+    <tr><td colspan="2"><div><span><input id="autoupdatefromgithub" name="autoupdatefromgithub" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='Runs a daily job checking for updates - installs available auto-updates automatically'> Upgrade Wizard from GitHub <b>automatically</b></span></div></td></tr>
+  </table>
 </div>
+<fieldset id="bridges" name="bridges" class="primary expanded">
+    <legend>ALLOW ebtables FORWARD for these bridges and their interfaces</legend>
+    <div class="addable" data-min="1" data-max="1" data-object="bridges" data-objectify="1">
+        <div class="addable-template" style="padding-top:0px;">
+            <div class="multi">
+                <div><input name="enabled" type="checkbox" onclick="validate()" /></div>
+                <div><input id="bridge" name="bridge" size="5" disabled /></div>
+                <div><input id="olsr" name="olsr" size="8" disabled /></div>
+                <div><input id="name" name="name" size="20" disabled /></div>
+            </div>
+        </div>
+        <div class="addable-container"></div>
+        <button type="button" class="addable-add" style="position:absolute;right:0px;opacity:0.0;filter:alpha(opacity=0);" disabled></button>
+    </div>
+</fieldset>
 
+<fieldset id="interfaces" name="interfaces" class="primary expanded">
+    <legend>Interfaces and currently assigned ACCEPT-Rules (count only)</legend>
+    <div class="addable" data-min="1" data-max="1" data-object="interfaces" data-objectify="1">
+        <div class="addable-template" style="padding-top:0px;">
+            <div class="multi">
+                <div><input name="enabled" type="checkbox" onclick="validate()" disabled /></div>
+                <div><input id="interface" name="interfaces" size="5" disabled /></div>
+                <div><input id="rules" name="rules" size="8" disabled /></div>
+                <div><input id="name" name="name" size="20" disabled /></div>
+            </div>
+        </div>
+        <div class="addable-container"></div>
+        <button type="button" class="addable-add" style="position:absolute;right:0px;opacity:0.0;filter:alpha(opacity=0);" disabled></button>
+    </div>
+</fieldset>
+
+<br><br>
 <script>
 function colors() {
+    document.getElementById('updatestatus').disabled = true;
+    var input = document.getElementById('updatestatus');
+    input.style.color = "black";
+    document.getElementById('updatefromgithub').disabled = true;
+    if (input.value.match(/new version available/)) {
+        document.getElementById('updatefromgithub').disabled = false;
+        input.style.color = "red";
+        //disable();
+    } else if (input.value.match(/up-to-date/)) {
+        input.style.color = "green";
+        //enable();
+    } 
+    var v6nodes = document.getElementById("bridges").getElementsByTagName('*');
+    var remember=0;
+    for(var i=0; i<v6nodes.length; i++) {
+        if (v6nodes[i].name == "olsr" && v6nodes[i].value!=="") {
+            remember=1;
+        } else {
+            remember=0;
+        }
+        if (v6nodes[i].name == "name") {
+            v6nodes[i].disabled = true;
+        } else if (v6nodes[i].name == "bridge") {
+            v6nodes[i].disabled = true;
+        } else if (v6nodes[i].name == "enabled" && remember==0) {
+            v6nodes[i].disabled = false;
+        }
+    }
+
 }
 function validate() {
 }
