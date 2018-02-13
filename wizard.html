@@ -2,7 +2,7 @@
 
 EdgeMAX Wizard "Setup0xFF" created 09/2017 by CPO for FunkFeuer.at
 Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.9.0+)
-versioninfo=201801300
+versioninfo=201802130
 ^-- use version identifier as number: YYYYMMDDX whereas X can be intraday-version
 autoupdate=201701010
 ^-- set autoupdate the same version identifier to allow autoupdates
@@ -13,7 +13,7 @@ autoupdate=201701010
 </div>
 <legend style="position:absolute;right:0px;padding:5px;">
     <center>EdgeMAX Wizard "Setup0xFF"<br>created 09/2017 by CPO for FunkFeuer.at<br>
-    Version 20180130</center>
+    Version 20180213</center>
 </legend>
 
 <fieldset id="basic" name="basic" class="primary expanded">
@@ -25,29 +25,30 @@ autoupdate=201701010
     <table border="0">
       <tr><td width=150 style="vertical-align:middle"><b>Public IPv4</b></td>
       <td><input style="right:10px" id="ip" name="ip" type="text" size="15" placeholder="78.41.119.000" maxlength="15" title="IPv4 address without subnet suffix" /> OLSR-Address from Redeemer<td></tr>
-      <tr><td>&nbsp;</td><td>This will be the public IPv4 address from the Range 78.41.112.0/21 or 193.238.156.0/22. 
-      The IPv4 adress you enter here will be assigned to interface br0 with Subnet-Suffix /32 for olsr(v1), bridge-members 
-      will be all eth-ports natively (no vlan tag), that are NOT enabled as LAN-Interface or as Web-Access-Interface (see advanced settings section below).
+      <tr><td>&nbsp;</td><td>This will be the public IPv4 address from the range 78.41.112.0/21 or 193.238.156.0/22. 
+      The IPv4 address you enter here will be assigned to interface br0 with subnet-suffix /32 for olsr(v1), bridge-members 
+      will be all eth-ports natively (no vlan tag), that are NOT enabled as LAN-Interface or as NAT-Client-Interface (see advanced settings section below).
       In case you need tagged OLSR traffic on at least one eth-port, enter the needed interfaces/vlans in the advanced settings section. </td></tr>
       <tr><td>&nbsp;</td><td><input style="right:10px" id="eui64address" name="eui64address" type="text" size="40" disabled /> OLSRv2 IPv6 Address </td></tr>
-      <tr><td>&nbsp;</td><td>OLSRv2 will fire up using this EUI64-style IPv6 address, what is calculated from your routers unique MAC address. This field is read-only.</td></tr>
+      <tr><td>&nbsp;</td><td>OLSRv2 will fire up using this EUI64-style IPv6 address, what is calculated from your routers unique MAC address (serial number). 
+      This field is read-only.</td></tr>
       <tr><td colspan=2><hr></td></tr>
 
       <tr><td style="vertical-align:middle"><b>Node-ID</b></td>
       <td><input style="right:10px" id="nodeid" name="nodeid" type="text" size="5" placeholder="2222" maxlength="5" title="numeric nodeid this router will be used for" /> Numeric Node-ID from Redeemer<td></tr>
-      <tr><td>&nbsp;</td><td>This ID will be used for the local Management-Network from the Range 10.xxx.yy.100/24 (i.e. nodeid <em>12345</em> 
-      will result in 10.<em>123.45</em>.100/24). This Subnet is dedicated for your local AirOS-Antennas' Management Interface: in AirOS, use Network-Settings-Mode "Advanced"
-      to configure the IP settings for vlan 1100 to 10.xxx.yy.NNN/255.255.255.0 with Gateway 10.xxx.yy.100 (NNN can be any number between 1 and 99, i.e. 10.123.45.1 for your first Antenna).
+      <tr><td>&nbsp;</td><td>This ID will be used for the local management network from the Range 10.xxx.yy.100/24 (i.e. node-id <em>12345</em> 
+      will result in 10.<em>123.45</em>.100/24). This Subnet is dedicated for your local AirOS-antennas' management interface: in AirOS, use network-settings-mode "advanced"
+      to configure the IP settings for vlan 1100 to 10.xxx.yy.NNN/255.255.255.0 with Gateway 10.xxx.yy.100 (NNN can be any number between 1 and 99, i.e. 10.123.45.1 for your first antenna).
       Use "Antenna-IPs" section in the optional settings below to enable forwarding from i.e. https://yourpublicip:1001/ to the management interface from your Antenna-1.<br>
-      To find out the nodeid of your node, look for the URL-parameter "id=" from the links in your redeemer pages: it will look somehow 
+      To find out the node-id of your node, look for the URL-parameter "id=" from the links in your redeemer pages: it will look somehow 
       like <em>https://portal.funkfeuer.at/wien/index.php?section=nodes&id_members=1234&action=show&<b>id=2222</b></em>.
       </td></tr>
       <tr><td colspan=2><hr></td></tr>
 
       <tr><td style="vertical-align:middle"><b>Management-LAN</b></td>
-      <td><input id="managementbr" name="managamentbr" type="checkbox" checked /> Use bridge br1 for Management-VLAN 1100<td></tr>
+      <td><input id="managementbr" name="managementbr" type="checkbox" checked /> Use bridge br1 for Management-VLAN 1100<td></tr>
       <tr><td>&nbsp;</td><td>Check this to add all eth-ports' vlan 1100 to a dedicated bridge br1. If you uncheck this option, vlan 1100 will be added as virtual-interface of br0,
-	  so that the management network is dedicated to the interface br0.1100 instead of br1.
+      so that the management network is dedicated to the interface br0.1100 instead of br1.
       </td></tr>
    </table>
 </fieldset>
@@ -64,7 +65,7 @@ autoupdate=201701010
 
       <tr><td style="vertical-align:middle"><b>SSH-Port</b></td>
       <td><input style="right:10px" id="sshport" name="sshport" type="text" size="9" value="10" maxlength="5" title="port number between 1 and 9999 used to listen for ssh connections" /> Change default ssh-port?<td></tr>
-      <tr><td>&nbsp;</td><td>Changing the SSH port from 22 to another will reduce the risk of exploits. Common on Funkfeuer-Edgerouters is port '10'</td></tr>
+      <tr><td>&nbsp;</td><td>Changing the SSH port from 22 to another will reduce the risk of exploits.</td></tr>
       <tr><td colspan=2><hr></td></tr>
 
       <tr><td style="vertical-align:middle"><b>Username</b></td>
@@ -110,8 +111,8 @@ autoupdate=201701010
         <button type="button" class="addable-add">Add</button>
         </div>
         </td></tr>
-      <tr><td>&nbsp;</td><td>Use this list of Interfaces, if your antennas do not all connect to a dedicated eth-port of your router. All interfaces
-        added in this list will be created and added to br0 additionally. This is usefull if i.e. a switch is connected between your router and your multiple
+      <tr><td>&nbsp;</td><td>Use this list of interfaces, if your antennas do not all connect to a dedicated eth-port of your router. All interfaces
+        added in this list will be created and added to br0 additionally. This is useful if i.e. a switch is connected between your router and your multiple
         antennas, or if an OLSR neighbor is connected using a tagged vlan, or if an eth-port connects to a Ubiquiti NanoStation M5 having another antenna(s)
         cascaded on its secondary ethernet port.
         </td></tr>
@@ -139,9 +140,9 @@ autoupdate=201701010
         <button type="button" class="addable-add">Add</button>
         </div>
         </td></tr>
-      <tr><td>&nbsp;</td><td>Use this list of IPs in order to set up portforwarding rules from you public IP of br0 to your Management-IPs of
-      your AirOS devices in vlan 1100. For each Antenna, the TCP-Ports 100n (for SSL-HTTPS) and 100n2 (for SSH) and the UDP-Port 100n3 (for SNMP) will 
-      bei created (i.e. for Antenna with IP address 10.xxx.yy.9 the Ports 1009,10092,10093 will be used): https://yourpublicip:1009/ for AirOS-WebUI,
+      <tr><td>&nbsp;</td><td>Use this list of IPs in order to set up portforwarding rules from you public IP of br0 to your management-IPs of
+      your AirOS devices in vlan 1100. For each antenna, the tcp-ports 100n (for SSL-HTTPS) and 100n2 (for SSH) and the udp-port 100n3 (for SNMP) will 
+      be created (i.e. for antenna with IP address 10.xxx.yy.9 the Ports 1009,10092,10093 will be used): https://yourpublicip:1009/ for AirOS-WebUI,
       "ssh user@yourpublicip -p 10092" for ssh access.
         </td></tr>
     </table>
@@ -155,8 +156,8 @@ after some time. Real errors will show up within a few seconds and with a more s
 After configuration has finished, reload this wizard using the "Reload-Page" option of your browser in order to see the logfile.<br>
 <br>
 <input id="simulate" name="simulate" type="checkbox" /> <b>Simulate only</b> - if activated, this wizard will only verify the fields you entered and WILL NOT 
-perform any changes in configuration or any software installation. Use this feature to check if all entered data is ok: the message
-"Apply successful" will tell you so. In case all was fine, you may uncheck this option and click on Apply again (no need to re-load and re-enter all the fields).<br>
+perform any changes in configuration or any software installation. Use this feature to check if all entered data is ok: the message 
+"Apply successful" will tell you so. In case everything was fine, you may uncheck this option and click on "Apply" again (no need to re-load and re-enter all the fields).<br>
 Look at <em>/var/log/0xffsetup.log</em> for your configuration commands.
 </div>
 
