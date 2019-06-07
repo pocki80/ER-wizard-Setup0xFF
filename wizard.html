@@ -2,7 +2,7 @@
 
 EdgeMAX Wizard "Setup0xFF" created 09/2017 by CPO for FunkFeuer.at
 Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.9.0+)
-versioninfo=201904290
+versioninfo=201906070
 ^-- use version identifier as number: YYYYMMDDX whereas X can be intraday-version
 autoupdate=201701010
 ^-- set autoupdate the same version identifier to allow autoupdates
@@ -10,7 +10,7 @@ autoupdate=201701010
 -->
 <legend style="position:absolute;right:0px;padding:5px;">
     <center>EdgeMAX Wizard "Setup0xFF"<br>created 09/2017 by CPO for FunkFeuer.at<br>
-    Version 20190429</center>
+    Version 20190607</center>
 </legend>
 <div class="instructions">
   EdgeMAX Wizard "Setup0xFF"
@@ -29,9 +29,9 @@ autoupdate=201701010
       The IPv4 address you enter here will be assigned to interface br0 with subnet-suffix /32 for olsr(v1), bridge-members 
       will be all eth-ports natively (no vlan tag), that are NOT enabled as LAN-Interface or as NAT-Client-Interface (see advanced settings section below).
       In case you need tagged OLSR traffic on at least one eth-port, enter the needed interfaces/vlans in the advanced settings section. </td></tr>
-      <tr><td>&nbsp;</td><td><input style="right:10px" id="eui64address" name="eui64address" type="text" size="40" disabled /> OLSRv2 IPv6 Address </td></tr>
+      <tr><td>&nbsp;</td><td><input style="right:10px" id="eui64address" name="eui64address" type="text" size="40" readonly /> OLSRv2 IPv6 Address </td></tr>
       <tr><td>&nbsp;</td><td>OLSRv2 will fire up using this EUI64-style IPv6 address, what is calculated from your routers unique MAC address (serial number). 
-      This field is read-only.</td></tr>
+      This field is read-only, please consider copy/paste this address into an ipv6-device on the redeemer management pages.</td></tr>
       <tr><td colspan=2><hr></td></tr>
 
       <tr><td style="vertical-align:middle"><b>Node-ID</b></td>
@@ -41,14 +41,15 @@ autoupdate=201701010
       to configure the IP settings for vlan 1100 to 10.xxx.yy.NNN/255.255.255.0 with Gateway 10.xxx.yy.100 (NNN can be any number between 1 and 99, i.e. 10.123.45.1 for your first antenna).
       Use "Antenna-IPs" section in the optional settings below to enable forwarding from i.e. https://yourpublicip:1001/ to the management interface from your Antenna-1.<br>
       To find out the node-id of your node, look for the URL-parameter "id=" from the links in your redeemer pages: it will look somehow 
-      like <em>https://portal.funkfeuer.at/wien/index.php?section=nodes&id_members=1234&action=show&<b>id=2222</b></em>.
+      like <em>https://portal.funkfeuer.at/wien/index.php?section=nodes&action=show&<b>id=2222</b></em>.
       </td></tr>
       <tr><td colspan=2><hr></td></tr>
 
       <tr><td style="vertical-align:middle"><b>Management-LAN</b></td>
       <td><input id="managementbr" name="managementbr" type="checkbox" checked /> Use bridge br1 for Management-VLAN 1100<td></tr>
       <tr><td>&nbsp;</td><td>Check this to add all eth-ports' vlan 1100 to a dedicated bridge br1. If you uncheck this option, vlan 1100 will be added as virtual-interface of br0,
-      so that the management network is dedicated to the interface br0.1100 instead of br1.
+      so that the management network is dedicated to the interface br0.1100 instead of br1.<br>
+      ebtables-forward policy will be set to DROP (to isolate olsr neighbors on br0) and additional ALLOW rules will be applied for br0.1100 or br1. You can manage additionial ALLOWs later using the ebtables feature wizard.
       </td></tr>
    </table>
 </fieldset>
@@ -84,7 +85,7 @@ autoupdate=201701010
       <td><input style="right:10px" id="laninterface" name="laninterface" type="text" size="9" value="eth0" maxlength="9" title="eth-port, vlan optional, i.e. eth0.200" /> - enable DHCP-server:<input id="landhcp" name="landhcp" type="checkbox" checked /><td></tr>
       <tr><td>&nbsp;</td><td>Interface which will be NAT/LAN for local clients to connect to the internet. This interface will use 192.168.1.1/24, enables 
                              DHCP-server (if checkbox selected) and will do NAT/masquerade to your public 0xFF-Funkfeuer IP address on br0.<br>
-                             If you need eth0 to be an OLSR-interface, remove "eth0" from this field. In such case: you will need a different way to connect to this WebUI. </td></tr>
+                             If you need eth0 to be an OLSR-interface, remove "eth0" from this field. In such case: you will need a different way to connect to this WebUI after the configuration is applied. </td></tr>
       <tr><td colspan=2><hr></td></tr>
 
       <tr><td style="vertical-align:middle"><b>NAT-Client</b></td>
@@ -143,7 +144,10 @@ autoupdate=201701010
       <tr><td>&nbsp;</td><td>Use this list of IPs in order to set up portforwarding rules from you public IP of br0 to your management-IPs of
       your AirOS devices in vlan 1100. For each antenna, the tcp-ports 100n (for SSL-HTTPS) and 100n2 (for SSH) and the udp-port 100n3 (for SNMP) will 
       be created (i.e. for antenna with IP address 10.xxx.yy.9 the Ports 1009,10092,10093 will be used): https://yourpublicip:1009/ for AirOS-WebUI,
-      "ssh user@yourpublicip -p 10092" for ssh access.
+      "ssh user@yourpublicip -p 10092" for ssh access.<br>
+      When LAN-Interface is entered above, the rules for SSL-HTTPS forwarding on tcp-ports 100n will also be added for connections from LAN-port to https://192.168.1.1:1009/, so
+      you will still be able to configure your antennas from an attached LAN station. Please make sure, that the antennas' management interface settings in AirOS are already configured to lan0.1100
+      having its IP set to 10.xxx.yy.zzz/255.255.255.0 with gateway 10.xxx.yy.100 already.
         </td></tr>
     </table>
 </fieldset>
